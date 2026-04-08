@@ -9,6 +9,9 @@ import (
 	"context"
 	"fmt"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -26,6 +29,30 @@ import (
 	"github.com/fheinfling/ai-coop-db/internal/rpc"
 	sqlpkg "github.com/fheinfling/ai-coop-db/internal/sql"
 )
+
+// repoMigrationsDir returns the absolute path of the repo's migrations
+// directory, found by walking up from this source file until a go.mod
+// is found. Used to set AICOOPDB_MIGRATIONS_DIR before db.RunMigrations
+// runs in tests, since the test binary's CWD is test/integration where
+// no migrations directory exists.
+func repoMigrationsDir(t *testing.T) string {
+	t.Helper()
+	_, thisFile, _, ok := runtime.Caller(0)
+	require.True(t, ok, "runtime.Caller failed")
+	dir := filepath.Dir(thisFile)
+	for i := 0; i < 8; i++ {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return filepath.Join(dir, "migrations")
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	t.Fatalf("could not find go.mod walking up from %s", thisFile)
+	return ""
+}
 
 // Harness is the wired-up server bound to a testcontainers Postgres.
 type Harness struct {
@@ -57,6 +84,11 @@ func StartHarness(t *testing.T) *Harness {
 
 	dsn, err := pgC.ConnectionString(ctx, "sslmode=disable")
 	require.NoError(t, err)
+
+	// The migrations runner looks for ./migrations relative to CWD by
+	// default, but tests run from test/integration where no such
+	// directory exists. Point it at the repo root explicitly.
+	t.Setenv("AICOOPDB_MIGRATIONS_DIR", repoMigrationsDir(t))
 
 	// The testcontainers DSN already embeds the postgres password from
 	// tcpg.WithPassword above, so we pass "" as the third arg to leave

@@ -45,6 +45,10 @@ func main() {
 	helpEnv := flag.Bool("help-env", false, "print the AICOOPDB_* env var reference and exit")
 	showVersion := flag.Bool("version", false, "print version info and exit")
 	hashSecret := flag.String("hash-secret", "", "argon2id-hash the given secret and print the PHC string (used by scripts/gen-key.sh)")
+	mintKey := flag.Bool("mint-key", false, "mint a new API key, print it once, and exit (uses the migrations DB connection)")
+	mintWorkspace := flag.String("mint-workspace", "default", "workspace name for -mint-key (created if missing)")
+	mintRole := flag.String("mint-role", "dbadmin", "Postgres role attached to the minted key (must already exist; e.g. dbadmin or dbuser)")
+	mintEnv := flag.String("mint-env", "dev", "env tag for the minted key (dev | live | test)")
 	flag.Parse()
 
 	if *showVersion {
@@ -65,11 +69,53 @@ func main() {
 		fmt.Println(h)
 		return
 	}
+	if *mintKey {
+		if err := runMintKey(*mintWorkspace, *mintRole, *mintEnv); err != nil {
+			fmt.Fprintln(os.Stderr, "mint-key failed:", err)
+			os.Exit(1)
+		}
+		return
+	}
 
 	if err := run(); err != nil {
 		slog.Default().Error("server exited with error", "err", err)
 		os.Exit(1)
 	}
+}
+
+// runMintKey is the body of the -mint-key subcommand. It loads the same
+// AICOOPDB_* config the server uses (so the migrations URL + owner
+// password are picked up exactly as in the running container) and then
+// delegates to db.MintKey, printing the resulting bearer token.
+//
+// The token is shown on stdout *exactly once*. There is no recovery
+// path — only the argon2id hash is persisted.
+func runMintKey(workspace, pgRole, envTag string) error {
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("config: %w", err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	token, err := db.MintKey(
+		ctx,
+		cfg.MigrationsDatabaseURL,
+		cfg.OwnerPassword,
+		workspace,
+		pgRole,
+		auth.KeyEnvironment(envTag),
+	)
+	if err != nil {
+		return err
+	}
+	fmt.Println()
+	fmt.Println("===== API KEY MINTED (SHOWN ONCE — STORE IT NOW) =====")
+	fmt.Println(token)
+	fmt.Println("======================================================")
+	fmt.Println()
+	fmt.Println("Test with:")
+	fmt.Println("  curl -H 'Authorization: Bearer " + token + "' https://<your-domain>/v1/me")
+	return nil
 }
 
 func run() error {

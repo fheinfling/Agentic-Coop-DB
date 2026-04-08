@@ -1,26 +1,25 @@
 #!/usr/bin/env bash
-# scripts/gen-key.sh — mint an API key directly via psql.
+# scripts/gen-key.sh — convenience wrapper around `ai-coop-db-server -mint-key`.
 #
 # Usage:
-#   ./scripts/gen-key.sh <workspace-name> [pg_role]
+#   ./scripts/gen-key.sh [workspace] [pg_role]
 #
-# Defaults:
-#   pg_role = dbadmin   (so a fresh stack has a way in)
+# Examples:
+#   ./scripts/gen-key.sh                       # workspace=default, pg_role=dbadmin
+#   ./scripts/gen-key.sh acme dbuser           # workspace=acme,    pg_role=dbuser
+#   AICOOPDB_KEY_ENV=live ./scripts/gen-key.sh # tag the key as live instead of dev
 #
-# Requires:
-#   - the compose stack to be running
-#   - psql in PATH
-#   - DATABASE_URL env, or AICOOPDB_MIGRATIONS_DATABASE_URL, or the local
-#     dev default (postgres://aicoopdb_owner@localhost:5432/aicoopdb?sslmode=disable)
+# Resolution order for invoking the api binary:
 #
-# What it does:
-#   1. ensures the named workspace exists, creating it if necessary
-#   2. mints a fresh acd_dev_<id>_<secret> using openssl-generated entropy
-#   3. inserts the row in api_keys with the argon2id hash via psql + pgcrypto
-#   4. prints the full token to stdout exactly once
+#   1. AICOOPDB_API_CONTAINER env var (Coolify, k8s, any orchestrator
+#      where the api runs as a named container) — `docker exec` into it
+#   2. ai-coop-db-server binary on PATH (local builds or installed binaries)
+#   3. local docker container literally named ai-coop-db-api
+#      (the compose dev profile names it that way)
 #
-# This script is intended for the very first key on a fresh stack. After
-# that, prefer `ai-coop-db key create` (Phase 6 CLI) which calls into the API.
+# All the actual work — random generation, argon2id hashing, INSERTing
+# into aicoopdb.workspaces and aicoopdb.api_keys — happens inside the
+# Go binary. This script is just a launcher.
 
 set -euo pipefail
 
@@ -28,61 +27,21 @@ workspace="${1:-default}"
 pg_role="${2:-dbadmin}"
 env_tag="${AICOOPDB_KEY_ENV:-dev}"
 
-URL="${DATABASE_URL:-${AICOOPDB_MIGRATIONS_DATABASE_URL:-postgres://aicoopdb_owner@localhost:5432/aicoopdb?sslmode=disable}}"
-
-if ! command -v psql >/dev/null 2>&1; then
-  echo "psql not in PATH" >&2
-  exit 1
-fi
-if ! command -v openssl >/dev/null 2>&1; then
-  echo "openssl not in PATH" >&2
-  exit 1
-fi
-
-# 12 random bytes -> 16 base64url chars (no padding) for the lookup id.
-key_id="$(openssl rand 12 | base64 | tr '+/' '-_' | tr -d '=\n')"
-# 24 random bytes -> 32 base64url chars (no padding) for the secret (~192 bits).
-secret="$(openssl rand 24 | base64 | tr '+/' '-_' | tr -d '=\n')"
-full="acd_${env_tag}_${key_id}_${secret}"
-
-# Generate the argon2id hash inside Postgres using a small DO block. We rely
-# on pgcrypto being available (it ships with Postgres) but the hashing
-# itself is delegated to the api server's expected format. Since psql can't
-# run argon2 directly, we use a sentinel that the gateway recognises and
-# *re-hash on first use*. To keep the surface honest, however, we instead
-# call out to the ai-coop-db-server binary if it is on the host PATH.
-hash=""
-if command -v ai-coop-db-server >/dev/null 2>&1; then
-  hash="$(ai-coop-db-server -hash-secret "${secret}")"
-elif command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' | grep -q '^ai-coop-db-api'; then
-  hash="$(docker exec ai-coop-db-api /app/ai-coop-db-server -hash-secret "${secret}")"
-fi
-if [[ -z "${hash}" ]]; then
-  echo "could not invoke ai-coop-db-server -hash-secret; install the binary or run inside the api container" >&2
-  exit 1
-fi
-
-ws_id="$(uuidgen | tr 'A-Z' 'a-z')"
-key_pk="$(uuidgen | tr 'A-Z' 'a-z')"
-
-psql "${URL}" <<SQL
-SET client_min_messages = WARNING;
-
-INSERT INTO workspaces (id, name)
-VALUES ('${ws_id}', '${workspace}')
-ON CONFLICT (name) DO NOTHING;
-
-WITH ws AS (
-    SELECT id FROM workspaces WHERE name = '${workspace}' LIMIT 1
+args=(-mint-key
+  -mint-workspace "${workspace}"
+  -mint-role "${pg_role}"
+  -mint-env "${env_tag}"
 )
-INSERT INTO api_keys (id, workspace_id, key_id, secret_hash, env, pg_role, name)
-SELECT '${key_pk}', ws.id, '${key_id}', '${hash}', '${env_tag}', '${pg_role}', 'gen-key.sh'
-FROM ws;
-SQL
 
-echo
-echo "API key minted (shown only once):"
-echo "    ${full}"
-echo
-echo "Use it with:"
-echo "    curl -H 'Authorization: Bearer ${full}' http://localhost:8080/v1/me"
+if [[ -n "${AICOOPDB_API_CONTAINER:-}" ]]; then
+  exec docker exec "${AICOOPDB_API_CONTAINER}" /app/ai-coop-db-server "${args[@]}"
+elif command -v ai-coop-db-server >/dev/null 2>&1; then
+  exec ai-coop-db-server "${args[@]}"
+elif command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' | grep -q '^ai-coop-db-api'; then
+  exec docker exec ai-coop-db-api /app/ai-coop-db-server "${args[@]}"
+fi
+
+echo "could not invoke ai-coop-db-server -mint-key" >&2
+echo "  set AICOOPDB_API_CONTAINER to the running api container name, or" >&2
+echo "  install the ai-coop-db-server binary on PATH" >&2
+exit 1

@@ -23,14 +23,15 @@ import (
 
 func main() {
 	flag.Usage = func() {
+		// Fprintln adds a final newline; the heredoc must NOT also end
+		// with one or `go vet` flags it as a redundant newline error.
 		fmt.Fprintln(os.Stderr, `usage: ai-coop-db-migrate <up|version>
 
 env:
   AICOOPDB_MIGRATIONS_DATABASE_URL  postgres URL (login role: aicoopdb_owner)
   AICOOPDB_OWNER_PASSWORD           password for the aicoopdb_owner role (optional; trust auth otherwise)
   AICOOPDB_OWNER_PASSWORD_FILE      file containing the same (docker secret pattern)
-  AICOOPDB_MIGRATIONS_DIR           override the migrations directory
-`)
+  AICOOPDB_MIGRATIONS_DIR           override the migrations directory`)
 	}
 	flag.Parse()
 

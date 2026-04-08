@@ -32,6 +32,23 @@ var (
 	policyRE      = regexp.MustCompile(`(?is)CREATE\s+POLICY\s+\S+\s+ON\s+%s\s+.*?current_setting\(\s*'app.workspace_id'`)
 )
 
+// controlPlaneTables lists tables that the linter must NOT require RLS
+// on, even though they have a workspace_id column. They live in the
+// `aicoopdb` schema (moved by migration 0007) and are unreachable from
+// any API key role at all — schema-level isolation supersedes RLS for
+// these. RLS would be redundant defense against a threat model that
+// doesn't apply, and the migrations linter shouldn't enforce it.
+//
+// Add new control-plane tables here as they are introduced. Tenant
+// tables (anything a `dbadmin` or `dbuser` key can reach) are NOT
+// allowed in this list — those must always have RLS.
+var controlPlaneTables = map[string]bool{
+	"api_keys":         true,
+	"audit_logs":       true,
+	"idempotency_keys": true,
+	"rpc_registry":     true,
+}
+
 func main() {
 	dir := "migrations"
 	if len(os.Args) > 1 {
@@ -92,6 +109,12 @@ func lintFile(path, body string) []string {
 		// Skip the control-plane workspaces table itself — its rows ARE the
 		// tenants, so it has no workspace_id column.
 		if table == "workspaces" {
+			continue
+		}
+		// Skip other control-plane tables (api_keys, audit_logs, …).
+		// They live in the aicoopdb schema after migration 0007 and are
+		// unreachable from any API key role, so RLS is unnecessary.
+		if controlPlaneTables[table] {
 			continue
 		}
 		if !regexp.MustCompile(fmt.Sprintf(enableRLSRE.String(), regexp.QuoteMeta(table))).MatchString(body) {

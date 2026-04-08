@@ -14,8 +14,11 @@
 # Migrations are embedded in the binary via cmd/server's call to db.RunMigrations,
 # which uses the migrations/ files baked into the image at /app/migrations.
 
-ARG GO_VERSION=1.24
-ARG ALPINE_VERSION=3.20
+# GO_VERSION must be >= the `go` directive in go.mod (currently 1.25, raised
+# transitively by go.opentelemetry.io/otel v1.43). Bump in lockstep when
+# `go mod tidy` raises the directive again.
+ARG GO_VERSION=1.25
+ARG ALPINE_VERSION=3.21
 
 # ---- builder -----------------------------------------------------------------
 #

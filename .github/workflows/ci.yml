@@ -75,9 +75,12 @@ jobs:
   integration-go:
     runs-on: ubuntu-24.04
     needs: [lint-go, lint-migrations]
-    services:
-      docker:
-        image: docker:dind
+    # GitHub-hosted runners already have Docker installed and the
+    # /var/run/docker.sock socket exposed, so testcontainers-go works
+    # out of the box. We deliberately do NOT add `services: docker: dind`
+    # here — that adds a SECOND docker daemon as a sidecar, and the
+    # testcontainers-spawned containers end up unreachable from the
+    # test process (connection reset by peer on the mapped port).
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

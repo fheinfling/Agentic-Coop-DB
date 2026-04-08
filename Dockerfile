@@ -18,22 +18,35 @@ ARG GO_VERSION=1.24
 ARG ALPINE_VERSION=3.20
 
 # ---- builder -----------------------------------------------------------------
-FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
+#
+# pg_query_go embeds the PostgreSQL C parser and REQUIRES cgo. We therefore:
+#   - install gcc + musl-dev so cgo can compile the C sources
+#   - set CGO_ENABLED=1
+#   - link statically (-extldflags "-static") so the resulting binary still
+#     runs on distroless/static (no glibc, no musl loader at runtime)
+#
+# We deliberately do NOT use --platform=$BUILDPLATFORM here. Cgo cross-
+# compilation needs a cross-toolchain (xx, gcc-aarch64-linux-musl-cross, ...);
+# letting buildx run the builder under QEMU for each TARGETPLATFORM is slower
+# but keeps the Dockerfile simple. CI's `buildx` job uses
+# `docker/setup-qemu-action` which provides the binfmt handlers.
 
-ARG TARGETOS
-ARG TARGETARCH
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
+
 ARG VERSION=0.1.0-dev
 ARG COMMIT=unknown
 ARG BUILD_DATE=unknown
 
-ENV CGO_ENABLED=0 \
+ENV CGO_ENABLED=1 \
     GO111MODULE=on \
     GOPROXY=https://proxy.golang.org,direct
 
+RUN apk add --no-cache gcc musl-dev
+
 WORKDIR /src
 
-# Cache module downloads in their own layer
-COPY go.mod go.sum* ./
+# Cache module downloads in their own layer.
+COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
@@ -41,16 +54,14 @@ COPY . .
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath \
-      -ldflags "-s -w \
+      -ldflags "-s -w -extldflags '-static' \
         -X github.com/fheinfling/ai-coop-db/internal/version.Version=${VERSION} \
         -X github.com/fheinfling/ai-coop-db/internal/version.Commit=${COMMIT} \
         -X github.com/fheinfling/ai-coop-db/internal/version.BuildDate=${BUILD_DATE}" \
       -o /out/ai-coop-db-server ./cmd/server && \
-    GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath \
-      -ldflags "-s -w" \
+      -ldflags "-s -w -extldflags '-static'" \
       -o /out/ai-coop-db-migrate ./cmd/migrate
 
 # ---- runtime -----------------------------------------------------------------

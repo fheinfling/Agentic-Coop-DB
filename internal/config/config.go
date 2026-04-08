@@ -6,6 +6,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -121,9 +122,16 @@ func Load() (*Config, error) {
 	return &c, nil
 }
 
-// Usage prints an env var reference (used by `ai-coop-db-server -help-env`).
+// Usage returns the env var reference (used by `ai-coop-db-server -help-env`).
+//
+// envconfig.Usage writes to os.Stderr and only returns an error, so we use
+// Usagef with an in-memory buffer to capture the rendered text.
 func Usage() string {
-	return envconfig.Usage(EnvPrefix, &Config{}) //nolint:errcheck
+	var buf bytes.Buffer
+	if err := envconfig.Usagef(EnvPrefix, &Config{}, &buf, envconfig.DefaultListFormat); err != nil {
+		return fmt.Sprintf("(failed to render usage: %v)", err)
+	}
+	return buf.String()
 }
 
 // loadSecretFromFile resolves the docker-style `<name>_FILE` env var.

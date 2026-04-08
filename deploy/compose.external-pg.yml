@@ -107,7 +107,18 @@
 
 services:
   api:
-    image: ghcr.io/fheinfling/ai-coop-db-server:latest
+    # We both pin the published image AND declare a build context. Coolify
+    # (and `docker compose build`) will use the build context, producing a
+    # local image tagged ai-coop-db-server:dev. If you'd rather pull from
+    # ghcr instead of building per-deploy, comment out the `build:` block —
+    # Coolify will then `docker pull` the image: tag.
+    image: ai-coop-db-server:dev
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        VERSION: dev
+        COMMIT: coolify
     restart: unless-stopped
     expose:
       - "8080"

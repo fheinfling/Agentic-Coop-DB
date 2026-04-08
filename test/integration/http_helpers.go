@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -57,10 +58,18 @@ func postJSON(t *testing.T, h *Harness, token, path string, body any) map[string
 // keyIDFromToken parses the token and looks up the api_keys.id PK.
 func keyIDFromToken(t *testing.T, h *Harness, token string) string {
 	t.Helper()
-	// token shape: acd_<env>_<key_id>_<secret>
-	parts := splitN(token, "_", 4)
-	require.Len(t, parts, 4)
-	keyID := parts[2]
+	// Token format: acd_<env>_<keyID(16 base64url chars)>_<secret(32 base64url chars)>
+	// We CANNOT split on "_" because the base64url alphabet includes "_".
+	// Use position-based parsing matching ParseBearer in internal/auth/key.go.
+	const acdPrefix = "acd_"
+	require.True(t, strings.HasPrefix(token, acdPrefix), "token missing acd_ prefix: %s", token)
+	rest := token[len(acdPrefix):]
+	sep := strings.IndexByte(rest, '_')
+	require.True(t, sep >= 1, "env separator not found in token: %s", token)
+	rest = rest[sep+1:] // skip env
+	const keyIDEncodedLen = 16
+	require.True(t, len(rest) >= keyIDEncodedLen, "token too short for keyID: %s", token)
+	keyID := rest[:keyIDEncodedLen]
 	var dbID string
 	require.NoError(t, h.Pool.QueryRow(context.Background(),
 		`SELECT id FROM api_keys WHERE key_id = $1`, keyID).Scan(&dbID))

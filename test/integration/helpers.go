@@ -56,7 +56,10 @@ func StartHarness(t *testing.T) *Harness {
 	dsn, err := pgC.ConnectionString(ctx, "sslmode=disable")
 	require.NoError(t, err)
 
-	require.NoError(t, db.RunMigrations(ctx, dsn))
+	// The testcontainers DSN already embeds the postgres password from
+	// tcpg.WithPassword above, so we pass "" as the third arg to leave
+	// the URL alone (injectPassword treats an empty password as a no-op).
+	require.NoError(t, db.RunMigrations(ctx, dsn, ""))
 
 	// Reconnect as the gateway role for the pool. The migrations create
 	// aicoopdb_gateway and grant it dbadmin/dbuser membership.

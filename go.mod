@@ -1,4 +1,4 @@
-module github.com/fheinfling/aicoldb
+module github.com/fheinfling/ai-coop-db
 
 go 1.24
 

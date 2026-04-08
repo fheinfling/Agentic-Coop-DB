@@ -25,11 +25,11 @@ restic snapshots >/dev/null 2>&1 || {
 
 # Try a logical pg_dump first via the postgres container's network alias.
 # Falls back to a filesystem snapshot.
-TMP_DUMP="/tmp/aicoldb.dump.gz"
+TMP_DUMP="/tmp/aicoopdb.dump.gz"
 if command -v pg_dump >/dev/null 2>&1; then
   PGPASSWORD="$(cat /run/secrets/postgres_password 2>/dev/null || echo '')" \
   pg_dump --format=custom --blobs --no-owner --compress=6 \
-          --host=postgres --username=aicoldb_owner aicoldb \
+          --host=postgres --username=aicoopdb_owner aicoopdb \
           | gzip -c > "${TMP_DUMP}" || {
     echo "[backup] pg_dump failed; falling back to filesystem snapshot"
     rm -f "${TMP_DUMP}"

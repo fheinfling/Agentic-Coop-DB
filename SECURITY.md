@@ -12,7 +12,7 @@ for 6 months.
 
 ## Reporting a vulnerability
 
-**Please do not open a public issue.** Use [GitHub Security Advisories](https://github.com/fheinfling/aicoldb/security/advisories/new)
+**Please do not open a public issue.** Use [GitHub Security Advisories](https://github.com/fheinfling/ai-coop-db/security/advisories/new)
 or email **security@franzheinfling.com** (PGP key in `docs/security.md`).
 
 Include:

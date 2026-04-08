@@ -1,4 +1,4 @@
-"""`aicoldb key` — manage API keys."""
+"""`ai-coop-db key` — manage API keys."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ import json
 
 import typer
 
-from aicoldb import connect
-from aicoldb.cli.config import load as load_config
+from aicoopdb import connect
+from aicoopdb.cli.config import load as load_config
 
 key_app = typer.Typer(no_args_is_help=True)
 
@@ -42,6 +42,6 @@ def rotate() -> None:
 def _cfg():  # type: ignore[no-untyped-def]
     cfg = load_config()
     if cfg is None:
-        typer.echo("no config found — run `aicoldb init` first", err=True)
+        typer.echo("no config found — run `ai-coop-db init` first", err=True)
         raise typer.Exit(code=2)
     return cfg

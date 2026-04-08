@@ -1,5 +1,5 @@
 ---
-name: aicoldb-shell-repl
+name: aicoopdb-shell-repl
 description: Interactive REPL bound to the configured workspace
 status: proposed
 owner: ""
@@ -10,12 +10,12 @@ updated: 2026-04-08
 
 ## Problem
 
-`aicoldb sql "SELECT 1"` is fine for one-off queries, but for exploring a
+`ai-coop-db sql "SELECT 1"` is fine for one-off queries, but for exploring a
 schema, dropping into a real REPL is much nicer.
 
 ## Proposed solution
 
-`aicoldb shell` opens a `psql`-style line editor:
+`ai-coop-db shell` opens a `psql`-style line editor:
 
 ```
 aic> SELECT * FROM notes LIMIT 5;
@@ -28,11 +28,11 @@ common psql verbs (`\dt`, `\d <table>`, `\?`, `\h`).
 
 ## Why deferred from v1
 
-Quality of life, not blocking. Users can already pipe to `aicoldb sql`.
+Quality of life, not blocking. Users can already pipe to `ai-coop-db sql`.
 
 ## Acceptance criteria
 
-- `aicoldb shell` runs without extra deps beyond what `aicoldb` already requires
+- `ai-coop-db shell` runs without extra deps beyond what `aicoopdb` already requires
 - Multi-line input works (newline-aware paste)
 - `\dt` returns the same shape as psql
 

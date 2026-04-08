@@ -1,4 +1,4 @@
-"""`aicoldb doctor` — verify the local install end to end.
+"""`ai-coop-db doctor` — verify the local install end to end.
 
 Checks (in order):
 
@@ -22,17 +22,17 @@ from pathlib import Path
 
 import typer
 
-from aicoldb import __version__ as sdk_version
-from aicoldb import connect
-from aicoldb.cli.config import config_dir, load as load_config
-from aicoldb.errors import AIColDBError
-from aicoldb.queue import Queue
+from aicoopdb import __version__ as sdk_version
+from aicoopdb import connect
+from aicoopdb.cli.config import config_dir, load as load_config
+from aicoopdb.errors import AICoopDBError
+from aicoopdb.queue import Queue
 
 
 def doctor() -> None:
     cfg = load_config()
     if cfg is None:
-        _fail("config not found — run `aicoldb init` first")
+        _fail("config not found — run `ai-coop-db init` first")
 
     _ok("config", f"loaded from {Path(config_dir()) / 'config.toml'}")
 
@@ -41,13 +41,13 @@ def doctor() -> None:
     try:
         h = db.health()
         _ok("/healthz", str(h.get("status", "?")))
-    except AIColDBError as e:
+    except AICoopDBError as e:
         _fail(f"/healthz failed: {e}")
 
     try:
         info = db.me()
         _ok("/v1/me", f"workspace={info.get('workspace_id')} role={info.get('role')}")
-    except AIColDBError as e:
+    except AICoopDBError as e:
         _fail(f"/v1/me failed: {e}")
 
     try:
@@ -55,7 +55,7 @@ def doctor() -> None:
         if res.command != "SELECT" or res.rows_affected != 1:
             _fail(f"SELECT 1 returned unexpected result: {res}")
         _ok("SELECT 1", "round trip ok")
-    except AIColDBError as e:
+    except AICoopDBError as e:
         _fail(f"SELECT 1 failed: {e}")
 
     # Idempotent write probe — uses a temp uuid as the key.
@@ -64,7 +64,7 @@ def doctor() -> None:
         db.execute("SELECT pg_sleep(0)", idempotency_key=key)
         db.execute("SELECT pg_sleep(0)", idempotency_key=key)
         _ok("idempotency", "replay returned cached response")
-    except AIColDBError as e:
+    except AICoopDBError as e:
         _fail(f"idempotency probe failed: {e}")
 
     try:
@@ -73,7 +73,7 @@ def doctor() -> None:
             _ok("pgvector", "extension installed")
         else:
             _warn("pgvector", "extension not installed (run migration 0005)")
-    except AIColDBError as e:
+    except AICoopDBError as e:
         _warn("pgvector", f"could not query pg_extension: {e}")
 
     try:

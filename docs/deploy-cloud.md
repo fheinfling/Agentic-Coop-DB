@@ -48,8 +48,8 @@ Wait for it to propagate (`dig db.example.com`).
 ## 3. Configure secrets
 
 ```bash
-git clone https://github.com/fheinfling/aicoldb.git
-cd aicoldb
+git clone https://github.com/fheinfling/ai-coop-db.git
+cd ai-coop-db
 mkdir -p deploy/secrets
 head -c 32 /dev/urandom | base64 > deploy/secrets/postgres_password.txt
 head -c 32 /dev/urandom | base64 > deploy/secrets/restic_password.txt
@@ -82,7 +82,7 @@ make up-cloud
 Watch the logs:
 
 ```bash
-docker compose -p aicoldb -f deploy/compose.yml -f deploy/compose.cloud.yml logs -f caddy
+docker compose -p aicoopdb -f deploy/compose.yml -f deploy/compose.cloud.yml logs -f caddy
 ```
 
 Caddy will request a certificate from Let's Encrypt on first boot. Once the
@@ -91,8 +91,8 @@ certificate is issued, the API is reachable at `https://db.example.com/`.
 ## 5. Mint your first key
 
 ```bash
-docker compose -p aicoldb exec api /app/aicoldb-server -version
-docker compose -p aicoldb exec -e DATABASE_URL='postgres://aicoldb_owner@postgres/aicoldb?sslmode=disable' \
+docker compose -p aicoopdb exec api /app/ai-coop-db-server -version
+docker compose -p aicoopdb exec -e DATABASE_URL='postgres://aicoopdb_owner@postgres/aicoopdb?sslmode=disable' \
   api sh -c './scripts/gen-key.sh default dbadmin'
 ```
 
@@ -103,7 +103,7 @@ the in-container path above).
 ## 6. Backup verification
 
 ```bash
-docker compose -p aicoldb run --rm backup /backup/restore-verify.sh
+docker compose -p aicoopdb run --rm backup /backup/restore-verify.sh
 ```
 
 Schedule this weekly via host cron.

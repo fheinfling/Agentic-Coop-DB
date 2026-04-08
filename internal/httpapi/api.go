@@ -13,13 +13,13 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/fheinfling/aicoldb/internal/audit"
-	"github.com/fheinfling/aicoldb/internal/auth"
-	"github.com/fheinfling/aicoldb/internal/config"
-	"github.com/fheinfling/aicoldb/internal/observability"
-	"github.com/fheinfling/aicoldb/internal/rpc"
-	sqlpkg "github.com/fheinfling/aicoldb/internal/sql"
-	"github.com/fheinfling/aicoldb/internal/version"
+	"github.com/fheinfling/ai-coop-db/internal/audit"
+	"github.com/fheinfling/ai-coop-db/internal/auth"
+	"github.com/fheinfling/ai-coop-db/internal/config"
+	"github.com/fheinfling/ai-coop-db/internal/observability"
+	"github.com/fheinfling/ai-coop-db/internal/rpc"
+	sqlpkg "github.com/fheinfling/ai-coop-db/internal/sql"
+	"github.com/fheinfling/ai-coop-db/internal/version"
 )
 
 // Deps is the wiring bag passed to New. Every dependency is required.

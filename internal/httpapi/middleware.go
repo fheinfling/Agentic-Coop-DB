@@ -12,8 +12,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"golang.org/x/time/rate"
 
-	"github.com/fheinfling/aicoldb/internal/auth"
-	"github.com/fheinfling/aicoldb/internal/observability"
+	"github.com/fheinfling/ai-coop-db/internal/auth"
+	"github.com/fheinfling/ai-coop-db/internal/observability"
 )
 
 // chiRouteContext returns the bound chi route pattern, or "" if none.

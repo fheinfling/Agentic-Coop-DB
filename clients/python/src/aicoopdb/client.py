@@ -1,4 +1,4 @@
-"""HTTP client for the AIColDB gateway.
+"""HTTP client for the AI Coop DB gateway.
 
 This module is the only place that talks to the network. It is intentionally
 small: the gateway endpoint is `{sql, params}` so the wrapper does almost
@@ -14,8 +14,8 @@ from typing import Any, Iterator, Sequence
 
 import requests
 
-from aicoldb.errors import (
-    AIColDBError,
+from aicoopdb.errors import (
+    AICoopDBError,
     AuthError,
     IdempotencyConflict,
     NetworkError,
@@ -23,7 +23,7 @@ from aicoldb.errors import (
     ServerError,
     ValidationError,
 )
-from aicoldb.retry import with_retry
+from aicoopdb.retry import with_retry
 
 
 @dataclass
@@ -37,15 +37,15 @@ class ExecuteResult:
     duration_ms: int
 
 
-def connect(base_url: str, *, api_key: str, timeout: float = 30.0, verify_tls: bool = True) -> "AIColDBClient":
+def connect(base_url: str, *, api_key: str, timeout: float = 30.0, verify_tls: bool = True) -> "AICoopDBClient":
     """Create a client bound to base_url + api_key.
 
-    >>> db = connect("https://db.example.com", api_key="aic_live_...")
+    >>> db = connect("https://db.example.com", api_key="acd_live_...")
     """
-    return AIColDBClient(base_url=base_url, api_key=api_key, timeout=timeout, verify_tls=verify_tls)
+    return AICoopDBClient(base_url=base_url, api_key=api_key, timeout=timeout, verify_tls=verify_tls)
 
 
-class AIColDBClient:
+class AICoopDBClient:
     """The thin client that wraps every server endpoint."""
 
     def __init__(self, base_url: str, api_key: str, timeout: float, verify_tls: bool) -> None:
@@ -58,7 +58,7 @@ class AIColDBClient:
             {
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
-                "User-Agent": "aicoldb-python/0.1.0",
+                "User-Agent": "aicoopdb-python/0.1.0",
             }
         )
 
@@ -224,7 +224,7 @@ class AIColDBClient:
             raise RateLimited(detail, status=r.status_code, problem=problem, retry_after=retry_after)
         if r.status_code >= 500:
             raise ServerError(detail, status=r.status_code, problem=problem)
-        raise AIColDBError(detail, status=r.status_code, problem=problem)
+        raise AICoopDBError(detail, status=r.status_code, problem=problem)
 
 
 class TransactionBuilder:
@@ -236,7 +236,7 @@ class TransactionBuilder:
     def execute(self, sql: str, params: Sequence[Any] | None = None) -> None:
         self._statements.append((sql, list(params or [])))
 
-    def commit(self, client: AIColDBClient) -> None:
+    def commit(self, client: AICoopDBClient) -> None:
         if not self._statements:
             return
         if len(self._statements) == 1:
@@ -250,7 +250,7 @@ class TransactionBuilder:
         idx = 0
         for i, (sql, params) in enumerate(self._statements[:-1]):
             renumbered, idx = _renumber(sql, idx)
-            ctes.append(f"_aicoldb_w{i} AS ({renumbered})")
+            ctes.append(f"_aicoopdb_w{i} AS ({renumbered})")
             params_all.extend(params)
         last_sql, last_params = self._statements[-1]
         renumbered_last, _ = _renumber(last_sql, idx)

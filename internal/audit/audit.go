@@ -1,6 +1,6 @@
 // Package audit writes one structured row per authenticated request to the
 // audit_logs table. The full SQL/params live in the slog stream by default;
-// set AICOLDB_AUDIT_INCLUDE_SQL=true to also persist them on the row.
+// set AICOOPDB_AUDIT_INCLUDE_SQL=true to also persist them on the row.
 package audit
 
 import (

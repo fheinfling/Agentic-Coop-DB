@@ -1,4 +1,4 @@
-"""Unit tests for AIColDBClient using a mock requests session."""
+"""Unit tests for AICoopDBClient using a mock requests session."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from aicoldb.client import AIColDBClient, _renumber, _format_vector
-from aicoldb.errors import (
+from aicoopdb.client import AICoopDBClient, _renumber, _format_vector
+from aicoopdb.errors import (
     AuthError,
     IdempotencyConflict,
     NetworkError,
@@ -19,8 +19,8 @@ from aicoldb.errors import (
 )
 
 
-def make_client() -> tuple[AIColDBClient, MagicMock]:
-    c = AIColDBClient("http://localhost:8080", api_key="aic_dev_x_y", timeout=1.0, verify_tls=True)
+def make_client() -> tuple[AICoopDBClient, MagicMock]:
+    c = AICoopDBClient("http://localhost:8080", api_key="acd_dev_x_y", timeout=1.0, verify_tls=True)
     session = MagicMock()
     c._session = session
     return c, session

@@ -11,7 +11,7 @@ import time
 from collections.abc import Callable
 from typing import TypeVar
 
-from aicoldb.errors import AIColDBError, NetworkError, RateLimited, ServerError
+from aicoopdb.errors import AICoopDBError, NetworkError, RateLimited, ServerError
 
 T = TypeVar("T")
 
@@ -41,7 +41,7 @@ def with_retry(fn: Callable[[], T], *, max_attempts: int = 5, sleep: Callable[[f
         except (NetworkError, ServerError) as e:
             sleep(backoff(attempt))
             last = e
-        except AIColDBError:
+        except AICoopDBError:
             raise
     assert last is not None
     raise last

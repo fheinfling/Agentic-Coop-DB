@@ -1,11 +1,11 @@
-// Command aicoldb-migrate is the standalone migration runner.
+// Command ai-coop-db-migrate is the standalone migration runner.
 //
 // Usage:
 //
-//	AICOLDB_MIGRATIONS_DATABASE_URL=postgres://aicoldb_owner@host/db?sslmode=disable \
-//	  aicoldb-migrate up
+//	AICOOPDB_MIGRATIONS_DATABASE_URL=postgres://aicoopdb_owner@host/db?sslmode=disable \
+//	  ai-coop-db-migrate up
 //
-// The same logic is embedded in cmd/server when AICOLDB_MIGRATE_ON_START=true
+// The same logic is embedded in cmd/server when AICOOPDB_MIGRATE_ON_START=true
 // (the default), so this binary is only needed when you want to run migrations
 // as a one-shot job — e.g. in a kubernetes init container or a CI step.
 package main
@@ -21,16 +21,16 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 
-	"github.com/fheinfling/aicoldb/internal/db"
+	"github.com/fheinfling/ai-coop-db/internal/db"
 )
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, `usage: aicoldb-migrate <up|down|version>
+		fmt.Fprintln(os.Stderr, `usage: ai-coop-db-migrate <up|down|version>
 
 env:
-  AICOLDB_MIGRATIONS_DATABASE_URL  postgres URL (login role: aicoldb_owner)
-  AICOLDB_MIGRATIONS_DIR           override the migrations directory
+  AICOOPDB_MIGRATIONS_DATABASE_URL  postgres URL (login role: aicoopdb_owner)
+  AICOOPDB_MIGRATIONS_DIR           override the migrations directory
 `)
 	}
 	flag.Parse()
@@ -40,9 +40,9 @@ env:
 		cmd = flag.Arg(0)
 	}
 
-	url := os.Getenv("AICOLDB_MIGRATIONS_DATABASE_URL")
+	url := os.Getenv("AICOOPDB_MIGRATIONS_DATABASE_URL")
 	if url == "" {
-		fmt.Fprintln(os.Stderr, "AICOLDB_MIGRATIONS_DATABASE_URL is required")
+		fmt.Fprintln(os.Stderr, "AICOOPDB_MIGRATIONS_DATABASE_URL is required")
 		os.Exit(2)
 	}
 

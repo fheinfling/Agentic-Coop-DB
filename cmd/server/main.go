@@ -1,4 +1,4 @@
-// Command aicoldb-server is the AIColDB API server entrypoint.
+// Command ai-coop-db-server is the AI Coop DB API server entrypoint.
 //
 // All wiring lives here; internal/ packages are intentionally not aware of
 // each other beyond the layered dependency direction documented in
@@ -6,9 +6,9 @@
 //
 // Lifecycle:
 //
-//  1. Load config from AICOLDB_* env vars.
+//  1. Load config from AICOOPDB_* env vars.
 //  2. Build the slog logger and the prometheus registry.
-//  3. Open the pgxpool as the low-privilege login role aicoldb_gateway.
+//  3. Open the pgxpool as the low-privilege login role aicoopdb_gateway.
 //  4. Optionally run pending migrations (see internal/db.RunMigrations).
 //  5. Build the http.Handler tree (chi router).
 //  6. Serve until SIGTERM/SIGINT, then drain in-flight requests.
@@ -30,26 +30,26 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"github.com/fheinfling/aicoldb/internal/audit"
-	"github.com/fheinfling/aicoldb/internal/auth"
-	"github.com/fheinfling/aicoldb/internal/config"
-	"github.com/fheinfling/aicoldb/internal/db"
-	"github.com/fheinfling/aicoldb/internal/httpapi"
-	"github.com/fheinfling/aicoldb/internal/observability"
-	"github.com/fheinfling/aicoldb/internal/rpc"
-	sqlpkg "github.com/fheinfling/aicoldb/internal/sql"
-	"github.com/fheinfling/aicoldb/internal/version"
+	"github.com/fheinfling/ai-coop-db/internal/audit"
+	"github.com/fheinfling/ai-coop-db/internal/auth"
+	"github.com/fheinfling/ai-coop-db/internal/config"
+	"github.com/fheinfling/ai-coop-db/internal/db"
+	"github.com/fheinfling/ai-coop-db/internal/httpapi"
+	"github.com/fheinfling/ai-coop-db/internal/observability"
+	"github.com/fheinfling/ai-coop-db/internal/rpc"
+	sqlpkg "github.com/fheinfling/ai-coop-db/internal/sql"
+	"github.com/fheinfling/ai-coop-db/internal/version"
 )
 
 func main() {
-	helpEnv := flag.Bool("help-env", false, "print the AICOLDB_* env var reference and exit")
+	helpEnv := flag.Bool("help-env", false, "print the AICOOPDB_* env var reference and exit")
 	showVersion := flag.Bool("version", false, "print version info and exit")
 	hashSecret := flag.String("hash-secret", "", "argon2id-hash the given secret and print the PHC string (used by scripts/gen-key.sh)")
 	flag.Parse()
 
 	if *showVersion {
 		v := version.Get()
-		fmt.Printf("aicoldb-server %s (%s) built %s\n", v.Version, v.Commit, v.BuildDate)
+		fmt.Printf("ai-coop-db-server %s (%s) built %s\n", v.Version, v.Commit, v.BuildDate)
 		return
 	}
 	if *helpEnv {
@@ -80,7 +80,7 @@ func run() error {
 
 	logger := observability.NewLogger(cfg.LogLevel, cfg.LogFormat)
 	slog.SetDefault(logger)
-	logger.Info("starting aicoldb-server",
+	logger.Info("starting ai-coop-db-server",
 		"version", version.Version,
 		"commit", version.Commit,
 		"build_date", version.BuildDate,
@@ -90,13 +90,13 @@ func run() error {
 	// Refuse to run plaintext HTTP outside of localhost unless the operator
 	// has explicitly opted in.
 	if !cfg.InsecureHTTP && !isLocalAddr(cfg.HTTPAddr) {
-		return errors.New("plaintext HTTP on a non-localhost address requires AICOLDB_INSECURE_HTTP=1")
+		return errors.New("plaintext HTTP on a non-localhost address requires AICOOPDB_INSECURE_HTTP=1")
 	}
 
 	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// Open the gateway pool. The pool's login role is aicoldb_gateway,
+	// Open the gateway pool. The pool's login role is aicoopdb_gateway,
 	// which has no privileges of its own — see migration 0004.
 	pool, err := db.OpenPool(rootCtx, db.PoolConfig{
 		URL:          cfg.DatabaseURL,
@@ -243,7 +243,7 @@ func run() error {
 }
 
 // isLocalAddr returns true for ":<port>", "localhost:<port>", "127.0.0.1:<port>",
-// and "[::1]:<port>". Used as part of the AICOLDB_INSECURE_HTTP gate.
+// and "[::1]:<port>". Used as part of the AICOOPDB_INSECURE_HTTP gate.
 func isLocalAddr(addr string) bool {
 	if addr == "" {
 		return false

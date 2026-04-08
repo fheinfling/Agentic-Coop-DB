@@ -18,14 +18,14 @@ import (
 	tc "github.com/testcontainers/testcontainers-go"
 	tcpg "github.com/testcontainers/testcontainers-go/modules/postgres"
 
-	"github.com/fheinfling/aicoldb/internal/audit"
-	"github.com/fheinfling/aicoldb/internal/auth"
-	"github.com/fheinfling/aicoldb/internal/config"
-	"github.com/fheinfling/aicoldb/internal/db"
-	"github.com/fheinfling/aicoldb/internal/httpapi"
-	"github.com/fheinfling/aicoldb/internal/observability"
-	"github.com/fheinfling/aicoldb/internal/rpc"
-	sqlpkg "github.com/fheinfling/aicoldb/internal/sql"
+	"github.com/fheinfling/ai-coop-db/internal/audit"
+	"github.com/fheinfling/ai-coop-db/internal/auth"
+	"github.com/fheinfling/ai-coop-db/internal/config"
+	"github.com/fheinfling/ai-coop-db/internal/db"
+	"github.com/fheinfling/ai-coop-db/internal/httpapi"
+	"github.com/fheinfling/ai-coop-db/internal/observability"
+	"github.com/fheinfling/ai-coop-db/internal/rpc"
+	sqlpkg "github.com/fheinfling/ai-coop-db/internal/sql"
 )
 
 // Harness is the wired-up server bound to a testcontainers Postgres.
@@ -45,8 +45,8 @@ func StartHarness(t *testing.T) *Harness {
 
 	pgC, err := tcpg.Run(ctx,
 		"pgvector/pgvector:pg16",
-		tcpg.WithDatabase("aicoldb"),
-		tcpg.WithUsername("aicoldb_owner"),
+		tcpg.WithDatabase("aicoopdb"),
+		tcpg.WithUsername("aicoopdb_owner"),
 		tcpg.WithPassword("test"),
 		tc.WithWaitStrategy(nil),
 	)
@@ -59,7 +59,7 @@ func StartHarness(t *testing.T) *Harness {
 	require.NoError(t, db.RunMigrations(ctx, dsn))
 
 	// Reconnect as the gateway role for the pool. The migrations create
-	// aicoldb_gateway and grant it dbadmin/dbuser membership.
+	// aicoopdb_gateway and grant it dbadmin/dbuser membership.
 	gatewayDSN := dsn // testcontainers gives us the owner DSN; for tests we
 	// reuse it because the in-process tests are the only consumer.
 	pool, err := db.OpenPool(ctx, db.PoolConfig{URL: gatewayDSN, MaxConns: 5, MinConns: 1})

@@ -1,4 +1,4 @@
-"""`aicoldb queue` — inspect / flush the local offline retry queue."""
+"""`ai-coop-db queue` — inspect / flush the local offline retry queue."""
 
 from __future__ import annotations
 
@@ -6,9 +6,9 @@ from pathlib import Path
 
 import typer
 
-from aicoldb import connect
-from aicoldb.cli.config import config_dir, load as load_config
-from aicoldb.queue import Queue, QueueItem
+from aicoopdb import connect
+from aicoopdb.cli.config import config_dir, load as load_config
+from aicoopdb.queue import Queue, QueueItem
 
 queue_app = typer.Typer(no_args_is_help=True)
 
@@ -31,7 +31,7 @@ def flush() -> None:
     """Drain the queue against the configured server."""
     cfg = load_config()
     if cfg is None:
-        typer.echo("no config found — run `aicoldb init` first", err=True)
+        typer.echo("no config found — run `ai-coop-db init` first", err=True)
         raise typer.Exit(code=2)
     db = connect(cfg.base_url, api_key=cfg.api_key)
     q = Queue(queue_path())

@@ -16,13 +16,13 @@ services:
       args:
         VERSION: dev
         COMMIT: local
-    image: aicoldb-server:dev
+    image: ai-coop-db-server:dev
     ports:
       - "8080:8080"
     environment:
-      AICOLDB_INSECURE_HTTP: "true"
-      AICOLDB_LOG_FORMAT: "text"
-      AICOLDB_LOG_LEVEL: "debug"
+      AICOOPDB_INSECURE_HTTP: "true"
+      AICOOPDB_LOG_FORMAT: "text"
+      AICOOPDB_LOG_LEVEL: "debug"
 
   postgres:
     ports:

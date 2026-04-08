@@ -1,4 +1,4 @@
-# AIColDB Makefile — single dev entrypoint
+# AI Coop DB Makefile — single dev entrypoint
 #
 # Most users only need:
 #   make up-local        # bring the stack up locally
@@ -17,7 +17,7 @@ SHELL          := /usr/bin/env bash
 
 # ---- variables ---------------------------------------------------------------
 
-MODULE         := github.com/fheinfling/aicoldb
+MODULE         := github.com/fheinfling/ai-coop-db
 VERSION        ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.1.0-dev")
 COMMIT         ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 BUILD_DATE     := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -30,7 +30,7 @@ LDFLAGS        := -s -w \
 GO             ?= go
 GO_BUILD_FLAGS := -trimpath -ldflags "$(LDFLAGS)"
 
-PROJECT        := aicoldb
+PROJECT        := aicoopdb
 COMPOSE        := docker compose -p $(PROJECT)
 COMPOSE_BASE   := -f deploy/compose.yml
 COMPOSE_LOCAL  := $(COMPOSE_BASE) -f deploy/compose.local.yml
@@ -47,10 +47,10 @@ help: ## show this help
 build: build-server build-migrate build-lint-migrations ## build all Go binaries
 
 build-server: ## build the API server binary
-	$(GO) build $(GO_BUILD_FLAGS) -o bin/aicoldb-server ./cmd/server
+	$(GO) build $(GO_BUILD_FLAGS) -o bin/ai-coop-db-server ./cmd/server
 
 build-migrate: ## build the standalone migrator
-	$(GO) build $(GO_BUILD_FLAGS) -o bin/aicoldb-migrate ./cmd/migrate
+	$(GO) build $(GO_BUILD_FLAGS) -o bin/ai-coop-db-migrate ./cmd/migrate
 
 build-lint-migrations: ## build the migration linter
 	$(GO) build -o bin/lint-migrations ./scripts/lint-migrations
@@ -66,7 +66,7 @@ lint-go: ## golangci-lint
 	golangci-lint run ./...
 
 lint-python: ## ruff + mypy
-	cd clients/python && ruff check . && mypy src/aicoldb
+	cd clients/python && ruff check . && mypy src/aicoopdb
 
 lint-migrations: build-lint-migrations ## fail if tenant tables are missing RLS policies
 	./bin/lint-migrations migrations

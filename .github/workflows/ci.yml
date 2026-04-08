@@ -88,7 +88,7 @@ jobs:
       - name: ruff
         run: cd clients/python && ruff check .
       - name: mypy
-        run: cd clients/python && mypy src/aicoldb
+        run: cd clients/python && mypy src/aicoopdb
       - name: pytest
         run: cd clients/python && pytest -q
       - name: pip-audit

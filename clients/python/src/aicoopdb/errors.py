@@ -3,7 +3,7 @@
 Every public client method raises one of these — never a bare requests.HTTPError
 or json.JSONDecodeError. The taxonomy is:
 
-    AIColDBError                # root
+    AICoopDBError                # root
         AuthError               # 401 / 403 — bad/missing/expired key
         ValidationError         # 400 — server-side SQL or arg validation
         IdempotencyConflict     # 409 — same key, different body
@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import Any
 
 
-class AIColDBError(Exception):
+class AICoopDBError(Exception):
     """Root for every error this package raises."""
 
     def __init__(self, message: str, *, status: int | None = None, problem: dict[str, Any] | None = None) -> None:
@@ -38,19 +38,19 @@ class AIColDBError(Exception):
         return str(self.problem.get("sqlstate", ""))
 
 
-class AuthError(AIColDBError):
+class AuthError(AICoopDBError):
     """401 / 403 — the API key is missing, invalid, expired, or unauthorised for the operation."""
 
 
-class ValidationError(AIColDBError):
+class ValidationError(AICoopDBError):
     """400 — the request was malformed or the SQL failed validator checks."""
 
 
-class IdempotencyConflict(AIColDBError):
+class IdempotencyConflict(AICoopDBError):
     """409 — Idempotency-Key reused with a different request body."""
 
 
-class RateLimited(AIColDBError):
+class RateLimited(AICoopDBError):
     """429 — too many requests; honour the Retry-After header."""
 
     def __init__(self, message: str, *, retry_after: float = 1.0, **kwargs: Any) -> None:
@@ -58,13 +58,13 @@ class RateLimited(AIColDBError):
         self.retry_after = retry_after
 
 
-class ServerError(AIColDBError):
+class ServerError(AICoopDBError):
     """5xx — the server reported an internal error."""
 
 
-class NetworkError(AIColDBError):
+class NetworkError(AICoopDBError):
     """Transport-level failure: DNS, connect, TLS, read timeout."""
 
 
-class QueueFullError(AIColDBError):
+class QueueFullError(AICoopDBError):
     """The local SQLite retry queue is at its configured maximum size."""

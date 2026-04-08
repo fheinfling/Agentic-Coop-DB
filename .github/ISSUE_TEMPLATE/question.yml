@@ -1,5 +1,5 @@
 name: Question
-description: Ask a question about how to use AIColDB
+description: Ask a question about how to use AI Coop DB
 labels: ["question"]
 body:
   - type: markdown

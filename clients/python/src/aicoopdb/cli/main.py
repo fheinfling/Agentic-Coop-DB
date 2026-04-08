@@ -1,13 +1,13 @@
-"""aicoldb — top-level CLI.
+"""aicoopdb — top-level CLI.
 
 Subcommands:
 
-    aicoldb init       interactive onboarding wizard (start the stack, mint a key)
-    aicoldb sql        run a one-shot SQL statement
-    aicoldb me         show the calling key's workspace + role
-    aicoldb key        manage API keys (create, rotate)
-    aicoldb queue      inspect / flush the local offline retry queue
-    aicoldb doctor     verify that everything is wired correctly
+    ai-coop-db init       interactive onboarding wizard (start the stack, mint a key)
+    ai-coop-db sql        run a one-shot SQL statement
+    ai-coop-db me         show the calling key's workspace + role
+    ai-coop-db key        manage API keys (create, rotate)
+    ai-coop-db queue      inspect / flush the local offline retry queue
+    ai-coop-db doctor     verify that everything is wired correctly
 """
 
 from __future__ import annotations
@@ -17,16 +17,16 @@ from typing import Any
 
 import typer
 
-from aicoldb import connect
-from aicoldb.cli import config as cli_config
-from aicoldb.cli.doctor import doctor as doctor_cmd
-from aicoldb.cli.init import init as init_cmd
-from aicoldb.cli.key import key_app
-from aicoldb.cli.queue import queue_app
+from aicoopdb import connect
+from aicoopdb.cli import config as cli_config
+from aicoopdb.cli.doctor import doctor as doctor_cmd
+from aicoopdb.cli.init import init as init_cmd
+from aicoopdb.cli.key import key_app
+from aicoopdb.cli.queue import queue_app
 
 app = typer.Typer(
-    name="aicoldb",
-    help="AIColDB CLI — auth gateway client for shared PostgreSQL.",
+    name="aicoopdb",
+    help="AI Coop DB CLI — auth gateway client for shared PostgreSQL.",
     no_args_is_help=True,
 )
 
@@ -71,7 +71,7 @@ def sql(
 def _require_config() -> cli_config.CLIConfig:
     cfg = cli_config.load()
     if cfg is None:
-        typer.echo("no config found — run `aicoldb init` first", err=True)
+        typer.echo("no config found — run `ai-coop-db init` first", err=True)
         raise typer.Exit(code=2)
     return cfg
 

@@ -1,12 +1,12 @@
-# aicoldb (Python client)
+# aicoopdb (Python client)
 
-A thin Python client for [AIColDB](https://github.com/fheinfling/aicoldb), the
+A thin Python client for [AI Coop DB](https://github.com/fheinfling/ai-coop-db), the
 auth gateway for shared PostgreSQL.
 
 ```python
-from aicoldb import connect
+from aicoopdb import connect
 
-db = connect("https://db.example.com", api_key="aic_live_...")
+db = connect("https://db.example.com", api_key="acd_live_...")
 db.execute(
     "INSERT INTO notes(id, body) VALUES ($1, $2)",
     ["b9c3...", "hi"],
@@ -17,17 +17,17 @@ rows = db.select("SELECT * FROM notes WHERE owner = $1", ["alice"])
 ## Install
 
 ```bash
-pip install aicoldb
+pip install ai-coop-db
 ```
 
 ## CLI
 
 ```bash
-aicoldb init                  # interactive onboarding wizard
-aicoldb me
-aicoldb sql "SELECT 1"
-aicoldb queue flush
-aicoldb doctor
+ai-coop-db init                  # interactive onboarding wizard
+ai-coop-db me
+ai-coop-db sql "SELECT 1"
+ai-coop-db queue flush
+ai-coop-db doctor
 ```
 
-See the [main repo](https://github.com/fheinfling/aicoldb) for the full docs.
+See the [main repo](https://github.com/fheinfling/ai-coop-db) for the full docs.

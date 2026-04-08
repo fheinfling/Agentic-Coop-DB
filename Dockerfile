@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1.7
 #
-# AIColDB server image — multi-stage, multi-arch (amd64 + arm64), distroless.
+# AI Coop DB server image — multi-stage, multi-arch (amd64 + arm64), distroless.
 #
 # Build:
-#   docker buildx build --platform linux/amd64,linux/arm64 -t aicoldb-server:dev .
+#   docker buildx build --platform linux/amd64,linux/arm64 -t ai-coop-db-server:dev .
 #
 # The final image:
 #   - runs as uid 65532 (nonroot, distroless convention)
@@ -44,31 +44,31 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath \
       -ldflags "-s -w \
-        -X github.com/fheinfling/aicoldb/internal/version.Version=${VERSION} \
-        -X github.com/fheinfling/aicoldb/internal/version.Commit=${COMMIT} \
-        -X github.com/fheinfling/aicoldb/internal/version.BuildDate=${BUILD_DATE}" \
-      -o /out/aicoldb-server ./cmd/server && \
+        -X github.com/fheinfling/ai-coop-db/internal/version.Version=${VERSION} \
+        -X github.com/fheinfling/ai-coop-db/internal/version.Commit=${COMMIT} \
+        -X github.com/fheinfling/ai-coop-db/internal/version.BuildDate=${BUILD_DATE}" \
+      -o /out/ai-coop-db-server ./cmd/server && \
     GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath \
       -ldflags "-s -w" \
-      -o /out/aicoldb-migrate ./cmd/migrate
+      -o /out/ai-coop-db-migrate ./cmd/migrate
 
 # ---- runtime -----------------------------------------------------------------
 FROM gcr.io/distroless/static-debian12:nonroot
 
-LABEL org.opencontainers.image.title="aicoldb-server" \
-      org.opencontainers.image.source="https://github.com/fheinfling/aicoldb" \
+LABEL org.opencontainers.image.title="ai-coop-db-server" \
+      org.opencontainers.image.source="https://github.com/fheinfling/ai-coop-db" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.description="Auth gateway for shared PostgreSQL"
 
 WORKDIR /app
 
-COPY --from=builder /out/aicoldb-server /app/aicoldb-server
-COPY --from=builder /out/aicoldb-migrate /app/aicoldb-migrate
+COPY --from=builder /out/ai-coop-db-server /app/ai-coop-db-server
+COPY --from=builder /out/ai-coop-db-migrate /app/ai-coop-db-migrate
 COPY migrations /app/migrations
 COPY sql /app/sql
 
 USER 65532:65532
 EXPOSE 8080
 
-ENTRYPOINT ["/app/aicoldb-server"]
+ENTRYPOINT ["/app/ai-coop-db-server"]

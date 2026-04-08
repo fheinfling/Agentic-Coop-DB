@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/fheinfling/aicoldb/internal/tenant"
+	"github.com/fheinfling/ai-coop-db/internal/tenant"
 )
 
 // Dispatcher invokes a registered Procedure. It is the only entry point

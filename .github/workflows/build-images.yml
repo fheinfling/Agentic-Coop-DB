@@ -38,7 +38,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/aicoldb-server
+          images: ghcr.io/${{ github.repository_owner }}/ai-coop-db-server
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}

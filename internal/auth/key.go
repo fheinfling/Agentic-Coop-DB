@@ -66,8 +66,8 @@ func ParseBearer(header string) (*ParsedKey, error) {
 	header = strings.TrimSpace(header)
 
 	parts := strings.Split(header, "_")
-	// "aic", env, keyID, secret
-	if len(parts) != 4 || parts[0] != "aic" {
+	// "acd", env, keyID, secret
+	if len(parts) != 4 || parts[0] != "acd" {
 		return nil, ErrInvalidKey
 	}
 	env := KeyEnvironment(parts[1])
@@ -100,7 +100,7 @@ func Mint(env KeyEnvironment) (keyID, secret, fullToken string, err error) {
 	}
 	keyID = base64.RawURLEncoding.EncodeToString(idBytes)
 	secret = base64.RawURLEncoding.EncodeToString(secBytes)
-	fullToken = fmt.Sprintf("aic_%s_%s_%s", env, keyID, secret)
+	fullToken = fmt.Sprintf("acd_%s_%s_%s", env, keyID, secret)
 	return keyID, secret, fullToken, nil
 }
 

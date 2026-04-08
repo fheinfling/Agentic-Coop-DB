@@ -31,4 +31,4 @@ have a place to land when they ask.
 
 - Subscribers see only events from their own workspace
 - Backpressure: slow consumers get disconnected, not buffered indefinitely
-- A `aicoldb subscribe <table>` CLI demo
+- A `ai-coop-db subscribe <table>` CLI demo

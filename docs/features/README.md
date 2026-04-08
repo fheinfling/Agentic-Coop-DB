@@ -33,11 +33,11 @@ GitHub issue that links to the doc.
 |------|----------------------------|----------|----------|------------------------------------------------------------------|
 | 0001 | go-client                  | proposed | p2       | A Go SDK with the same surface as the Python client              |
 | 0002 | js-client                  | proposed | p1       | Browser+node TypeScript SDK                                      |
-| 0003 | aicoldb-shell-repl         | proposed | p2       | An interactive REPL bound to the configured workspace            |
+| 0003 | aicoopdb-shell-repl         | proposed | p2       | An interactive REPL bound to the configured workspace            |
 | 0004 | cloud-provider-examples    | proposed | p2       | Per-provider deploy walkthroughs (Hetzner, DO, AWS, bare metal)  |
 | 0005 | sqlstate-http-mapping      | accepted | p1       | Document and stabilise the SQLSTATE → HTTP status mapping        |
 | 0006 | pgvector-benchmarks        | proposed | p2       | Reproducible IVFFlat / HNSW benchmark suite                      |
-| 0007 | aicoldb-lint               | accepted | p1       | A pre-commit linter that flags `db.execute(f"...{x}...")` patterns |
+| 0007 | aicoopdb-lint               | accepted | p1       | A pre-commit linter that flags `db.execute(f"...{x}...")` patterns |
 | 0008 | signed-releases            | accepted | p1       | Cosign-signed releases + SBOM                                    |
 | 0009 | distributed-rate-limiting  | proposed | p2       | Redis-backed token buckets for multi-replica deployments         |
 | 0010 | pgbouncer-frontend         | proposed | p3       | Stick PgBouncer in front of postgres for higher concurrency      |

@@ -46,9 +46,9 @@ secrets/
 deploy/data/
 deploy/postgres-data/
 
-# AIColDB local state
-~/.aicoldb/
-.aicoldb/
+# AI Coop DB local state
+~/.ai-coop-db/
+.ai-coop-db/
 queue.db
 queue.db-journal
 

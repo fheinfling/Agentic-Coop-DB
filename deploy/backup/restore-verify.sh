@@ -18,9 +18,9 @@ trap 'rm -rf "$WORK"' EXIT
 echo "[verify] restoring latest pg_dump snapshot to ${WORK}"
 restic restore latest --tag pg_dump --target "${WORK}"
 
-DUMP="$(find "${WORK}" -type f -name 'aicoldb.dump.gz' -print -quit || true)"
+DUMP="$(find "${WORK}" -type f -name 'aicoopdb.dump.gz' -print -quit || true)"
 if [ -z "${DUMP}" ]; then
-  echo "[verify] no aicoldb.dump.gz in restored snapshot"
+  echo "[verify] no aicoopdb.dump.gz in restored snapshot"
   exit 1
 fi
 
@@ -29,18 +29,18 @@ echo "[verify] starting throwaway postgres"
 PGDATA="${WORK}/pgdata"
 mkdir -p "${PGDATA}"
 docker run --rm -v "${PGDATA}:/var/lib/postgresql/data" \
-  -e POSTGRES_PASSWORD=verify -e POSTGRES_DB=aicoldb \
-  --name aicoldb-restore-verify \
+  -e POSTGRES_PASSWORD=verify -e POSTGRES_DB=aicoopdb \
+  --name ai-coop-db-restore-verify \
   -d pgvector/pgvector:pg16 >/dev/null
 sleep 5
 
-gunzip -c "${DUMP}" | docker exec -i aicoldb-restore-verify pg_restore -U postgres -d aicoldb || {
-  docker stop aicoldb-restore-verify >/dev/null
+gunzip -c "${DUMP}" | docker exec -i ai-coop-db-restore-verify pg_restore -U postgres -d aicoopdb || {
+  docker stop ai-coop-db-restore-verify >/dev/null
   exit 1
 }
 
-OK="$(docker exec aicoldb-restore-verify psql -U postgres -d aicoldb -tAc 'SELECT 1')"
-docker stop aicoldb-restore-verify >/dev/null
+OK="$(docker exec ai-coop-db-restore-verify psql -U postgres -d aicoopdb -tAc 'SELECT 1')"
+docker stop ai-coop-db-restore-verify >/dev/null
 
 if [ "${OK}" != "1" ]; then
   echo "[verify] smoke SELECT failed"

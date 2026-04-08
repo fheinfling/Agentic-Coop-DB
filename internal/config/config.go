@@ -1,7 +1,7 @@
 // Package config loads runtime configuration from environment variables.
 //
 // Every option is documented inline so that `envconfig.Usage` can render a
-// complete reference (used by `aicoldb-server -help-env`). Defaults are
+// complete reference (used by `ai-coop-db-server -help-env`). Defaults are
 // chosen so that the local profile works with no env vars set at all.
 package config
 
@@ -12,8 +12,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-// EnvPrefix is the prefix for every AIColDB environment variable.
-const EnvPrefix = "AICOLDB"
+// EnvPrefix is the prefix for every AI Coop DB environment variable.
+const EnvPrefix = "AICOOPDB"
 
 // Config is the full runtime configuration tree.
 type Config struct {
@@ -26,13 +26,13 @@ type Config struct {
 	MaxRequestBodyBytes  int64         `envconfig:"MAX_REQUEST_BODY_BYTES" default:"1048576"`
 	MaxResponseBodyBytes int64         `envconfig:"MAX_RESPONSE_BODY_BYTES" default:"8388608"`
 
-	// Plaintext HTTP is allowed only when AICOLDB_INSECURE_HTTP=1. Any other
+	// Plaintext HTTP is allowed only when AICOOPDB_INSECURE_HTTP=1. Any other
 	// deployment must terminate TLS in front of the gateway.
 	InsecureHTTP bool `envconfig:"INSECURE_HTTP" default:"false"`
 
 	// Database (gateway pool — never connects as superuser)
-	DatabaseURL          string        `envconfig:"DATABASE_URL" required:"true" desc:"postgres URL the gateway pool uses (login role: aicoldb_gateway)"`
-	MigrationsDatabaseURL string        `envconfig:"MIGRATIONS_DATABASE_URL" desc:"postgres URL used by cmd/migrate (login role: aicoldb_owner). defaults to DATABASE_URL"`
+	DatabaseURL          string        `envconfig:"DATABASE_URL" required:"true" desc:"postgres URL the gateway pool uses (login role: aicoopdb_gateway)"`
+	MigrationsDatabaseURL string        `envconfig:"MIGRATIONS_DATABASE_URL" desc:"postgres URL used by cmd/migrate (login role: aicoopdb_owner). defaults to DATABASE_URL"`
 	DatabaseMaxConns     int32         `envconfig:"DATABASE_MAX_CONNS" default:"20"`
 	DatabaseMinConns     int32         `envconfig:"DATABASE_MIN_CONNS" default:"2"`
 	DatabaseConnLifetime time.Duration `envconfig:"DATABASE_CONN_LIFETIME" default:"30m"`
@@ -67,7 +67,7 @@ type Config struct {
 	MigrateOnStart bool `envconfig:"MIGRATE_ON_START" default:"true" desc:"run pending migrations at startup before serving traffic"`
 }
 
-// Load reads AICOLDB_* env vars into a fresh Config and validates simple
+// Load reads AICOOPDB_* env vars into a fresh Config and validates simple
 // invariants. Anything that depends on cross-field state is checked here so
 // the server fails fast at startup rather than mid-request.
 func Load() (*Config, error) {
@@ -90,7 +90,7 @@ func Load() (*Config, error) {
 	return &c, nil
 }
 
-// Usage prints an env var reference (used by `aicoldb-server -help-env`).
+// Usage prints an env var reference (used by `ai-coop-db-server -help-env`).
 func Usage() string {
 	return envconfig.Usage(EnvPrefix, &Config{}) //nolint:errcheck
 }

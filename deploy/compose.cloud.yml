@@ -18,13 +18,13 @@
 
 services:
   api:
-    image: ghcr.io/fheinfling/aicoldb-server:latest
+    image: ghcr.io/fheinfling/ai-coop-db-server:latest
     expose:
       - "8080"
     environment:
-      AICOLDB_LOG_FORMAT: "json"
-      AICOLDB_LOG_LEVEL: "info"
-      AICOLDB_METRICS_ENABLED: "true"
+      AICOOPDB_LOG_FORMAT: "json"
+      AICOOPDB_LOG_LEVEL: "info"
+      AICOOPDB_METRICS_ENABLED: "true"
     networks:
       - frontend
       - backend
@@ -95,7 +95,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATA_SOURCE_NAME: "postgresql://aicoldb_gateway@postgres:5432/aicoldb?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://aicoopdb_gateway@postgres:5432/aicoopdb?sslmode=disable"
     networks:
       - backend
     cap_drop: [ALL]

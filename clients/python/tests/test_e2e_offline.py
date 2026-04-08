@@ -9,7 +9,7 @@ Scenario:
   2. simulate outage by pointing the queue at an unreachable URL
   3. enqueue more writes
   4. point back at the live URL
-  5. `aicoldb queue flush`
+  5. `ai-coop-db queue flush`
   6. assert: rows are present, exactly once
 """
 
@@ -21,8 +21,8 @@ from pathlib import Path
 
 import pytest
 
-from aicoldb import connect
-from aicoldb.queue import Queue, QueueItem
+from aicoopdb import connect
+from aicoopdb.queue import Queue, QueueItem
 
 
 pytestmark = pytest.mark.skipif(
@@ -32,10 +32,10 @@ pytestmark = pytest.mark.skipif(
 
 
 def test_offline_queue_replays_exactly_once(tmp_path: Path) -> None:
-    base_url = os.environ.get("AICOLDB_E2E_URL", "http://localhost:8080")
-    api_key = os.environ.get("AICOLDB_E2E_API_KEY")
+    base_url = os.environ.get("AICOOPDB_E2E_URL", "http://localhost:8080")
+    api_key = os.environ.get("AICOOPDB_E2E_API_KEY")
     if not api_key:
-        pytest.skip("AICOLDB_E2E_API_KEY not set")
+        pytest.skip("AICOOPDB_E2E_API_KEY not set")
 
     db = connect(base_url, api_key=api_key)
 

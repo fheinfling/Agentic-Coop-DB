@@ -8,15 +8,15 @@
 
 services:
   api:
-    image: ghcr.io/fheinfling/aicoldb-server:latest
+    image: ghcr.io/fheinfling/ai-coop-db-server:latest
     ports:
       - "8080:8080"
     environment:
-      AICOLDB_DATABASE_MAX_CONNS: "8"
-      AICOLDB_DATABASE_MIN_CONNS: "1"
-      AICOLDB_RATE_LIMIT_PER_SECOND: "30"
-      AICOLDB_RATE_LIMIT_BURST: "60"
-      AICOLDB_INSECURE_HTTP: "true"
+      AICOOPDB_DATABASE_MAX_CONNS: "8"
+      AICOOPDB_DATABASE_MIN_CONNS: "1"
+      AICOOPDB_RATE_LIMIT_PER_SECOND: "30"
+      AICOOPDB_RATE_LIMIT_BURST: "60"
+      AICOOPDB_INSECURE_HTTP: "true"
     deploy:
       resources:
         limits:

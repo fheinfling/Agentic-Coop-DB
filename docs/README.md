@@ -1,4 +1,4 @@
-# AIColDB documentation
+# AI Coop DB documentation
 
 Start here:
 

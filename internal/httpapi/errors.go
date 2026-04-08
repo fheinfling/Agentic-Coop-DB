@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 
-	sqlpkg "github.com/fheinfling/aicoldb/internal/sql"
+	sqlpkg "github.com/fheinfling/ai-coop-db/internal/sql"
 )
 
 // Problem is the RFC7807 problem-details payload.

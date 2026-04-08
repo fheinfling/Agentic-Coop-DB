@@ -1,9 +1,9 @@
-"""aicoldb — Python client for the AIColDB auth gateway.
+"""aicoopdb — Python client for the AI Coop DB auth gateway.
 
 This package is intentionally tiny. The public surface is:
 
-    from aicoldb import connect
-    db = connect("https://db.example.com", api_key="aic_live_...")
+    from aicoopdb import connect
+    db = connect("https://db.example.com", api_key="acd_live_...")
     db.execute(sql, params)
     db.select(sql, params)
     db.transaction()
@@ -16,9 +16,9 @@ This package is intentionally tiny. The public surface is:
 Plus error classes (errors.py) and the offline retry queue (queue.py).
 """
 
-from aicoldb.client import AIColDBClient, connect
-from aicoldb.errors import (
-    AIColDBError,
+from aicoopdb.client import AICoopDBClient, connect
+from aicoopdb.errors import (
+    AICoopDBError,
     AuthError,
     IdempotencyConflict,
     NetworkError,
@@ -30,8 +30,8 @@ from aicoldb.errors import (
 
 __all__ = [
     "connect",
-    "AIColDBClient",
-    "AIColDBError",
+    "AICoopDBClient",
+    "AICoopDBError",
     "AuthError",
     "ValidationError",
     "IdempotencyConflict",

@@ -1,6 +1,6 @@
-# AIColDB — auth gateway for shared PostgreSQL
+# AI Coop DB — auth gateway for shared PostgreSQL
 
-You can't expose Postgres on the public internet. AIColDB lets your apps talk
+You can't expose Postgres on the public internet. AI Coop DB lets your apps talk
 to a remote Postgres + pgvector instance using nothing but an HTTPS URL and an
 API key. CRUD SQL goes through unchanged — no new query language, no ORM
 lock-in.
@@ -36,20 +36,20 @@ If you can write SQL, you can use it. `SELECT`, `INSERT`, `UPDATE`, `DELETE`,
 ## 30-second quickstart
 
 ```bash
-git clone https://github.com/fheinfling/aicoldb.git
-cd aicoldb
+git clone https://github.com/fheinfling/ai-coop-db.git
+cd ai-coop-db
 make up-local        # builds image, starts postgres + api, runs migrations
 ./scripts/gen-key.sh default dbadmin
-# prints: aic_dev_<id>_<secret>   <-- copy this once, it is shown only here
+# prints: acd_dev_<id>_<secret>   <-- copy this once, it is shown only here
 ```
 
 Then from any app:
 
 **Python**
 ```python
-from aicoldb import connect
+from aicoopdb import connect
 
-db = connect("http://localhost:8080", api_key="aic_dev_...")
+db = connect("http://localhost:8080", api_key="acd_dev_...")
 db.execute(
     "CREATE TABLE IF NOT EXISTS notes (id uuid PRIMARY KEY, body text)"
 )
@@ -63,7 +63,7 @@ rows = db.select("SELECT * FROM notes WHERE body = $1", ["hi"])
 **curl**
 ```bash
 curl -X POST http://localhost:8080/v1/sql/execute \
-  -H "Authorization: Bearer aic_dev_..." \
+  -H "Authorization: Bearer acd_dev_..." \
   -H "Content-Type: application/json" \
   -d '{"sql": "SELECT * FROM notes WHERE body = $1", "params": ["hi"]}'
 ```
@@ -73,7 +73,7 @@ curl -X POST http://localhost:8080/v1/sql/execute \
 await fetch("http://localhost:8080/v1/sql/execute", {
   method: "POST",
   headers: {
-    Authorization: "Bearer aic_dev_...",
+    Authorization: "Bearer acd_dev_...",
     "Content-Type": "application/json",
   },
   body: JSON.stringify({
@@ -94,7 +94,7 @@ enforces the minimum that Postgres cannot enforce by itself:
   time.
 - **Statement size cap** (64 KiB) and **parameter count cap** (100).
 - **`SET LOCAL ROLE <key.role>`** before forwarding. The pool's login role is
-  `aicoldb_gateway`, a low-privilege role with no privileges of its own — it
+  `aicoopdb_gateway`, a low-privilege role with no privileges of its own — it
   is only a *member* of the role each key is bound to.
 - **Built-in roles:** `dbadmin` (DDL/DCL, owner of `public`, `BYPASSRLS`,
   not superuser) and `dbuser` (CRUD, `NOBYPASSRLS`).
@@ -146,7 +146,7 @@ Full reference: [`docs/api.md`](docs/api.md).
 - `cmd/migrate` — standalone migrator (also embedded in the server)
 - `internal/` — implementation (clean layered architecture)
 - `migrations/` — numbered SQL migrations (golang-migrate)
-- `clients/python` — Python SDK + CLI (`pip install aicoldb`)
+- `clients/python` — Python SDK + CLI (`pip install ai-coop-db`)
 - `deploy/` — compose files for local, pi-lite, cloud, swarm
 - `docs/` — architecture, deployment, security, ADRs, feature roadmap
 - `test/integration` — testcontainers-go full-stack tests
@@ -173,7 +173,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md). All commits must be signed off
 (`git commit -s`) under the Developer Certificate of Origin.
 
 Good first issues are tracked under the
-[`good-first-issue`](https://github.com/fheinfling/aicoldb/labels/good-first-issue)
+[`good-first-issue`](https://github.com/fheinfling/ai-coop-db/labels/good-first-issue)
 label and as Markdown files in [`docs/features/`](docs/features/).
 
 ## Security

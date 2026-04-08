@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/fheinfling/aicoldb/internal/tenant"
+	"github.com/fheinfling/ai-coop-db/internal/tenant"
 )
 
 // ExecutorConfig configures the request-time tx settings.
@@ -149,7 +149,7 @@ func (e *Executor) maybeWrapSelectLimit(sqlText string) string {
 		return sqlText
 	}
 	trimmed := strings.TrimRight(sqlText, "; \t\n\r")
-	return fmt.Sprintf("SELECT * FROM (%s) AS _aicoldb_wrapped LIMIT %d", trimmed, e.cfg.DefaultSelectLimit)
+	return fmt.Sprintf("SELECT * FROM (%s) AS _aicoopdb_wrapped LIMIT %d", trimmed, e.cfg.DefaultSelectLimit)
 }
 
 // classifyPgErr unwraps the *pgconn.PgError so the HTTP layer can read the

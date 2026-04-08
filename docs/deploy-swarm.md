@@ -8,14 +8,14 @@ multiple swarm services.
 
 ```bash
 docker swarm init
-docker network create --driver overlay --attachable aicoldb_frontend
-docker network create --driver overlay --internal   aicoldb_backend
+docker network create --driver overlay --attachable ai-coop-db_frontend
+docker network create --driver overlay --internal   ai-coop-db_backend
 
 printf '%s' "$(head -c 32 /dev/urandom | base64)" \
-  | docker secret create aicoldb_postgres_password -
+  | docker secret create aicoopdb_postgres_password -
 
 printf '%s' "$(head -c 32 /dev/urandom | base64)" \
-  | docker secret create aicoldb_restic_password -
+  | docker secret create aicoopdb_restic_password -
 ```
 
 ## Deploy
@@ -23,13 +23,13 @@ printf '%s' "$(head -c 32 /dev/urandom | base64)" \
 ```bash
 make swarm-deploy
 # or
-docker stack deploy -c deploy/stack.swarm.yml aicoldb
+docker stack deploy -c deploy/stack.swarm.yml aicoopdb
 ```
 
 ## Updating
 
 ```bash
-docker service update --image ghcr.io/fheinfling/aicoldb-server:0.1.1 aicoldb_api
+docker service update --image ghcr.io/fheinfling/ai-coop-db-server:0.1.1 aicoopdb_api
 ```
 
 ## Constraints

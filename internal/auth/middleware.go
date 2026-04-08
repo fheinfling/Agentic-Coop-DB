@@ -41,7 +41,7 @@ func MustFromContext(ctx context.Context) *WorkspaceContext {
 }
 
 // Middleware is the http.Handler middleware that converts an
-// `Authorization: Bearer aic_...` header into a WorkspaceContext.
+// `Authorization: Bearer acd_...` header into a WorkspaceContext.
 type Middleware struct {
 	store  *Store
 	cache  *VerifyCache
@@ -66,7 +66,7 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 		token := r.Header.Get("Authorization")
 		parsed, err := ParseBearer(token)
 		if err != nil {
-			writeAuthError(w, http.StatusUnauthorized, "missing_or_invalid_api_key", "Authorization header must be 'Bearer aic_<env>_<id>_<secret>'")
+			writeAuthError(w, http.StatusUnauthorized, "missing_or_invalid_api_key", "Authorization header must be 'Bearer acd_<env>_<id>_<secret>'")
 			return
 		}
 		rec, err := m.resolve(r.Context(), parsed)
@@ -124,7 +124,7 @@ func (m *Middleware) resolve(ctx context.Context, p *ParsedKey) (*KeyRecord, err
 // writeAuthError writes a small RFC7807-shaped JSON error to w.
 func writeAuthError(w http.ResponseWriter, status int, code, detail string) {
 	w.Header().Set("Content-Type", "application/problem+json")
-	w.Header().Set("WWW-Authenticate", `Bearer realm="aicoldb"`)
+	w.Header().Set("WWW-Authenticate", `Bearer realm="aicoopdb"`)
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(
 		`{"type":"about:blank","title":"` + code + `","status":` + itoa(status) + `,"detail":"` + detail + `"}`,

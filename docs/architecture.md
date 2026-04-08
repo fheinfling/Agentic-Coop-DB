@@ -1,6 +1,6 @@
 # Architecture
 
-AIColDB is layered. Each layer depends only downward.
+AI Coop DB is layered. Each layer depends only downward.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -35,7 +35,7 @@ client ──HTTPS──► caddy ──HTTP──► api ──pgx──► pos
 
 ## Roles and the privilege boundary
 
-The pool's login role is `aicoldb_gateway`. It has no privileges of its own
+The pool's login role is `aicoopdb_gateway`. It has no privileges of its own
 beyond `LOGIN` and `GRANT`-membership in the per-key roles (`dbadmin`,
 `dbuser`, and any custom roles minted at runtime).
 

@@ -1,8 +1,8 @@
 """Local user config for the CLI.
 
-The CLI persists a tiny TOML file at ~/.aicoldb/config.toml so that
+The CLI persists a tiny TOML file at ~/.ai-coop-db/config.toml so that
 subsequent commands don't need --url / --api-key flags. The wizard
-(`aicoldb init`) writes this file; `aicoldb me` and friends read it.
+(`ai-coop-db init`) writes this file; `ai-coop-db me` and friends read it.
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ CONFIG_FILENAME = "config.toml"
 
 
 def config_dir() -> Path:
-    return Path(platformdirs.user_config_dir("aicoldb", appauthor=False, ensure_exists=True))
+    return Path(platformdirs.user_config_dir("aicoopdb", appauthor=False, ensure_exists=True))
 
 
 def config_path() -> Path:

@@ -57,7 +57,7 @@ func postJSON(t *testing.T, h *Harness, token, path string, body any) map[string
 // keyIDFromToken parses the token and looks up the api_keys.id PK.
 func keyIDFromToken(t *testing.T, h *Harness, token string) string {
 	t.Helper()
-	// token shape: aic_<env>_<key_id>_<secret>
+	// token shape: acd_<env>_<key_id>_<secret>
 	parts := splitN(token, "_", 4)
 	require.Len(t, parts, 4)
 	keyID := parts[2]

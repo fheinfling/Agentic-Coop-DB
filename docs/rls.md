@@ -54,12 +54,12 @@ Insert a row with the first key, then try to read it with the second key:
 
 ```bash
 curl -X POST http://localhost:8080/v1/sql/execute \
-  -H "Authorization: Bearer aic_dev_<ws-a-key>" \
+  -H "Authorization: Bearer acd_dev_<ws-a-key>" \
   -d '{"sql": "INSERT INTO notes(id, workspace_id, body) VALUES ($1, $2, $3)",
        "params": ["00000000-0000-0000-0000-000000000001", "<ws-a-id>", "secret"]}'
 
 curl -X POST http://localhost:8080/v1/sql/execute \
-  -H "Authorization: Bearer aic_dev_<ws-b-key>" \
+  -H "Authorization: Bearer acd_dev_<ws-b-key>" \
   -d '{"sql": "SELECT * FROM notes"}'
 # -> { "rows": [], ... }
 ```

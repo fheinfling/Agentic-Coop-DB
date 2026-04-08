@@ -1,8 +1,8 @@
 # Local development
 
 ```bash
-git clone https://github.com/fheinfling/aicoldb.git
-cd aicoldb
+git clone https://github.com/fheinfling/ai-coop-db.git
+cd ai-coop-db
 make up-local
 ```
 
@@ -18,13 +18,13 @@ Mint an admin key:
 
 ```bash
 ./scripts/gen-key.sh default dbadmin
-# prints: aic_dev_<id>_<secret>   <-- copy this once, it is shown only here
+# prints: acd_dev_<id>_<secret>   <-- copy this once, it is shown only here
 ```
 
 Then point any HTTP client at `http://localhost:8080`:
 
 ```bash
-curl -H "Authorization: Bearer aic_dev_..." http://localhost:8080/v1/me
+curl -H "Authorization: Bearer acd_dev_..." http://localhost:8080/v1/me
 ```
 
 ## Tearing down
@@ -34,7 +34,7 @@ make down
 ```
 
 This removes the compose project, including the postgres volume — any data
-in the local stack is gone. Use `docker compose -p aicoldb stop` if you want
+in the local stack is gone. Use `docker compose -p aicoopdb stop` if you want
 to keep the volume.
 
 ## Common dev commands

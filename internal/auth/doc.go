@@ -3,11 +3,11 @@
 //
 // Key format on the wire:
 //
-//	aic_<env>_<key_id>_<secret>
+//	acd_<env>_<key_id>_<secret>
 //
 // where:
 //
-//   - "aic"      — fixed prefix so the token is greppable in logs
+//   - "acd"      — fixed prefix so the token is greppable in logs
 //   - <env>      — "live" | "dev" | "test"; matches api_keys.env
 //   - <key_id>   — 16 url-safe base64 chars (12 raw bytes), used as the
 //                  unique lookup column on api_keys

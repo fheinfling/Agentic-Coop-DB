@@ -3,14 +3,14 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "aicoldb"
+name = "ai-coop-db"
 version = "0.1.0"
 description = "Auth gateway client for shared PostgreSQL — sends parameterised SQL over HTTPS."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [
-    { name = "The AIColDB Authors" }
+    { name = "The AI Coop DB Authors" }
 ]
 keywords = ["postgres", "postgresql", "auth", "gateway", "pgvector", "sdk"]
 classifiers = [
@@ -42,15 +42,15 @@ dev = [
 ]
 
 [project.scripts]
-aicoldb = "aicoldb.cli.main:app"
+ai-coop-db = "aicoopdb.cli.main:app"
 
 [project.urls]
-Homepage = "https://github.com/fheinfling/aicoldb"
-Source = "https://github.com/fheinfling/aicoldb"
-Issues = "https://github.com/fheinfling/aicoldb/issues"
+Homepage = "https://github.com/fheinfling/ai-coop-db"
+Source = "https://github.com/fheinfling/ai-coop-db"
+Issues = "https://github.com/fheinfling/ai-coop-db/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/aicoldb"]
+packages = ["src/aicoopdb"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src", "README.md", "tests"]

@@ -33,7 +33,7 @@ this document. CI fails on dependency drift.
 | `requests`     | Battle-tested HTTP client; no async required for the v1 surface  |
 | `typer`        | Decorator-based CLI; rich help; tiny dep footprint               |
 | `pydantic`     | Type-safe response models; the standard for Python data classes  |
-| `platformdirs` | OS-correct paths for `~/.aicoldb/`                               |
+| `platformdirs` | OS-correct paths for `~/.ai-coop-db/`                               |
 
 ## Rules
 

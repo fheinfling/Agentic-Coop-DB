@@ -27,5 +27,5 @@ The release pipeline must work first. Signing is a follow-up.
 
 ## Acceptance criteria
 
-- `cosign verify ghcr.io/fheinfling/aicoldb-server:0.1.0` succeeds keylessly
+- `cosign verify ghcr.io/fheinfling/ai-coop-db-server:0.1.0` succeeds keylessly
 - The release page lists the SBOM and the provenance file

@@ -1,10 +1,10 @@
 // Package observability wires structured logging, metrics, and (optional)
-// tracing for the AIColDB gateway.
+// tracing for the AI Coop DB gateway.
 //
 // Logging uses the standard library log/slog. Metrics use the prometheus
 // client_golang collector registry — see metrics.go for the registered
 // instruments. OpenTelemetry is optional and only initialised when
-// AICOLDB_OTEL_EXPORTER_OTLP_ENDPOINT is set.
+// AICOOPDB_OTEL_EXPORTER_OTLP_ENDPOINT is set.
 package observability
 
 import (
@@ -41,7 +41,7 @@ func newLogger(w io.Writer, level, format string) *slog.Logger {
 	} else {
 		h = slog.NewJSONHandler(w, opts)
 	}
-	return slog.New(h).With("service", "aicoldb")
+	return slog.New(h).With("service", "aicoopdb")
 }
 
 // FromContext returns a request-scoped logger if one was attached, otherwise

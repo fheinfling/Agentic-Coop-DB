@@ -1,7 +1,7 @@
 -- 0001_control_plane.up.sql
--- The minimum tables AIColDB needs to authenticate, authorize, and audit.
+-- The minimum tables AI Coop DB needs to authenticate, authorize, and audit.
 --
--- This migration runs as aicoldb_owner. It creates the schema in the public
+-- This migration runs as aicoopdb_owner. It creates the schema in the public
 -- schema for simplicity; if you want to namespace, change every CREATE TABLE
 -- below and update internal/db/queries.go to match.
 --
@@ -28,7 +28,7 @@ CREATE INDEX IF NOT EXISTS workspaces_name_idx ON workspaces(name);
 
 -- API keys.
 --
--- The full key sent over the wire is `aic_<env>_<key_id>_<secret>`. The
+-- The full key sent over the wire is `acd_<env>_<key_id>_<secret>`. The
 -- gateway looks up the row by key_id, then verifies <secret> against
 -- secret_hash using argon2id. The pg_role is the Postgres role the gateway
 -- runs `SET LOCAL ROLE` to before forwarding any SQL — Postgres is the
@@ -52,13 +52,13 @@ CREATE INDEX IF NOT EXISTS api_keys_workspace_idx ON api_keys(workspace_id) WHER
 CREATE INDEX IF NOT EXISTS api_keys_pg_role_idx   ON api_keys(pg_role);
 
 COMMENT ON COLUMN api_keys.pg_role IS
-  'Postgres role attached to this key via SET LOCAL ROLE before each request. Validated at insert time against pg_roles + pg_auth_members(aicoldb_gateway).';
+  'Postgres role attached to this key via SET LOCAL ROLE before each request. Validated at insert time against pg_roles + pg_auth_members(aicoopdb_gateway).';
 
 -- Audit trail.
 --
 -- Every authenticated request writes one row. The full SQL/params are NOT
 -- written here by default (they are in the slog stream); set
--- AICOLDB_AUDIT_INCLUDE_SQL=true to capture them on this table for compliance.
+-- AICOOPDB_AUDIT_INCLUDE_SQL=true to capture them on this table for compliance.
 CREATE TABLE IF NOT EXISTS audit_logs (
     id            uuid PRIMARY KEY,
     request_id    text NOT NULL,

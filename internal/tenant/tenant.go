@@ -9,7 +9,7 @@
 //                          the key's role (e.g. dbadmin / dbuser / custom)
 //
 // Both are scoped to the transaction, so a connection returned to the pool
-// reverts to its baseline state (the aicoldb_gateway login role with no
+// reverts to its baseline state (the aicoopdb_gateway login role with no
 // workspace context).
 package tenant
 
@@ -61,7 +61,7 @@ func Setup(ctx context.Context, tx pgx.Tx, workspaceID, pgRole string, stmtTimeo
 // isSafeRoleName returns true for identifiers consisting of lowercase
 // letters, digits, and underscores. Postgres allows more (case-folding,
 // quoted strings) but we deliberately restrict the surface to keep the
-// `SET LOCAL ROLE "..."` construction injection-proof. The aicoldb CLI
+// `SET LOCAL ROLE "..."` construction injection-proof. The aicoopdb CLI
 // already enforces this same shape at key creation time.
 func isSafeRoleName(s string) bool {
 	if s == "" || len(s) > 63 {

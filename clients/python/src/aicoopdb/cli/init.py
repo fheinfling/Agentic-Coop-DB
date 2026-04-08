@@ -1,4 +1,4 @@
-"""`aicoldb init` — interactive onboarding wizard.
+"""`ai-coop-db init` — interactive onboarding wizard.
 
 Goal: get a brand-new user from zero to a working CRUD round trip in
 under five minutes without reading any docs beyond the README.
@@ -10,8 +10,8 @@ Decision tree:
   3. For self-hosted profiles: run `make up-<profile>`, wait for /readyz,
      mint an admin API key via scripts/gen-key.sh, capture it once.
   4. For "existing server": prompt for URL + key, call /v1/me to validate.
-  5. Write ~/.aicoldb/config.toml.
-  6. Run `aicoldb doctor` and print a Python + curl snippet.
+  5. Write ~/.ai-coop-db/config.toml.
+  6. Run `ai-coop-db doctor` and print a Python + curl snippet.
 """
 
 from __future__ import annotations
@@ -24,9 +24,9 @@ from pathlib import Path
 
 import typer
 
-from aicoldb import connect
-from aicoldb.cli import config as cli_config
-from aicoldb.errors import AIColDBError
+from aicoopdb import connect
+from aicoopdb.cli import config as cli_config
+from aicoopdb.errors import AICoopDBError
 
 
 def init() -> None:
@@ -36,7 +36,7 @@ def init() -> None:
     if not _have("docker"):
         typer.echo(
             "Docker is not on PATH. Install it from https://docs.docker.com/engine/install/ "
-            "and re-run `aicoldb init`."
+            "and re-run `ai-coop-db init`."
         )
         raise typer.Exit(code=2)
 
@@ -54,7 +54,7 @@ def init() -> None:
     repo_root = _find_repo_root()
     if repo_root is None:
         typer.echo(
-            "Could not find an AIColDB checkout in the current or parent directories. "
+            "Could not find an AI Coop DB checkout in the current or parent directories. "
             "Either run this from inside the repo, or pick `existing` and point at a remote server."
         )
         raise typer.Exit(code=2)
@@ -71,7 +71,7 @@ def init() -> None:
     typer.echo(f"\n→ make {target}")
     res = subprocess.run(["make", target], cwd=repo_root)
     if res.returncode != 0:
-        typer.echo("`make` failed — fix the error above and re-run `aicoldb init`")
+        typer.echo("`make` failed — fix the error above and re-run `ai-coop-db init`")
         raise typer.Exit(code=res.returncode)
 
     base_url = "http://localhost:8080"
@@ -105,7 +105,7 @@ def _validate_and_save(base_url: str, api_key: str) -> None:
     db = connect(base_url, api_key=api_key, timeout=10.0)
     try:
         info = db.me()
-    except AIColDBError as e:
+    except AICoopDBError as e:
         typer.echo(f"could not authenticate against {base_url}: {e}")
         raise typer.Exit(code=1) from e
 
@@ -117,10 +117,10 @@ def _validate_and_save(base_url: str, api_key: str) -> None:
     typer.echo(f"server:    {info.get('server', {}).get('version', '?')}")
     typer.echo("\nyou are ready. try this:\n")
     typer.echo(f"    curl -H 'Authorization: Bearer {api_key}' {base_url}/v1/me")
-    typer.echo("    aicoldb sql 'SELECT 1'")
+    typer.echo("    ai-coop-db sql 'SELECT 1'")
     typer.echo("\nor in Python:\n")
-    typer.echo("    from aicoldb import connect")
-    typer.echo(f"    db = connect('{base_url}', api_key='aic_...')")
+    typer.echo("    from aicoopdb import connect")
+    typer.echo(f"    db = connect('{base_url}', api_key='acd_...')")
     typer.echo("    db.execute('SELECT 1')")
 
 
@@ -154,19 +154,19 @@ def _wait_ready(base_url: str, timeout: int) -> bool:
 def _extract_token(stdout: str) -> str | None:
     for line in stdout.splitlines():
         line = line.strip()
-        if line.startswith("aic_"):
+        if line.startswith("acd_"):
             return line
     return None
 
 
 _BANNER = """\
-aicoldb init — interactive onboarding wizard
+ai-coop-db init — interactive onboarding wizard
 
 This wizard will:
   1. Verify Docker is up
   2. Start the stack with your chosen profile
   3. Mint an admin API key
-  4. Save your config to ~/.aicoldb/config.toml
+  4. Save your config to ~/.ai-coop-db/config.toml
   5. Print a Python + curl snippet you can copy/paste
 
 Press Ctrl-C at any time to abort.

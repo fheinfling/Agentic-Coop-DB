@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	"github.com/fheinfling/aicoldb/test/integration"
+	"github.com/fheinfling/ai-coop-db/test/integration"
 )
 
 func TestCrossTenantWriteBlocked(t *testing.T) {

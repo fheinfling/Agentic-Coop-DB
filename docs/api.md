@@ -1,6 +1,6 @@
 # API reference
 
-All endpoints under `/v1` require an `Authorization: Bearer aic_<env>_<id>_<secret>`
+All endpoints under `/v1` require an `Authorization: Bearer acd_<env>_<id>_<secret>`
 header. Top-level endpoints (`/healthz`, `/readyz`, `/metrics`) are
 unauthenticated.
 
@@ -19,7 +19,7 @@ Forward a parameterised SQL statement.
 
 **Headers**
 
-- `Authorization: Bearer aic_...` (required)
+- `Authorization: Bearer acd_...` (required)
 - `Idempotency-Key: <uuid>` (optional — see below)
 
 **Response (200)**

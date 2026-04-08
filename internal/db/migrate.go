@@ -15,11 +15,11 @@ import (
 // MigrationsDir returns the directory where migrations live.
 //
 // Resolution order:
-//  1. AICOLDB_MIGRATIONS_DIR if set
+//  1. AICOOPDB_MIGRATIONS_DIR if set
 //  2. /app/migrations (the path baked into the docker image)
 //  3. ./migrations relative to the working directory (dev)
 func MigrationsDir() (string, error) {
-	if d := os.Getenv("AICOLDB_MIGRATIONS_DIR"); d != "" {
+	if d := os.Getenv("AICOOPDB_MIGRATIONS_DIR"); d != "" {
 		return d, nil
 	}
 	for _, candidate := range []string{"/app/migrations", "migrations"} {
@@ -31,11 +31,11 @@ func MigrationsDir() (string, error) {
 			return abs, nil
 		}
 	}
-	return "", errors.New("migrations directory not found (set AICOLDB_MIGRATIONS_DIR)")
+	return "", errors.New("migrations directory not found (set AICOOPDB_MIGRATIONS_DIR)")
 }
 
 // RunMigrations applies every pending migration as the role described by
-// migrationsURL (typically aicoldb_owner). It is safe to call repeatedly;
+// migrationsURL (typically aicoopdb_owner). It is safe to call repeatedly;
 // migrate.ErrNoChange is treated as a no-op.
 func RunMigrations(_ context.Context, migrationsURL string) error {
 	if migrationsURL == "" {

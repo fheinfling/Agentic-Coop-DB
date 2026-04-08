@@ -83,6 +83,74 @@ await fetch("http://localhost:8080/v1/sql/execute", {
 });
 ```
 
+## Connecting an AI agent
+
+The gateway is a natural fit for AI agent workloads:
+
+- **HTTP-only** — no native Postgres driver required in the agent runtime.
+- **API-key auth** — easy to inject via environment variable or secrets manager.
+- **Parameterized SQL** — the gateway rejects non-parameterized calls at parse
+  time, which means LLM-generated SQL cannot embed literal values (a common
+  injection vector).
+- **pgvector** — store and search embeddings alongside structured data.
+- **Idempotency keys** — retryable writes even over flaky networks.
+
+### Setup
+
+**1. Generate a key for the agent** (least-privilege: `dbuser`, not `dbadmin`):
+
+```bash
+./scripts/gen-key.sh <workspace> dbuser
+# prints: acd_dev_<id>_<secret>   ← store in your agent's secrets manager
+```
+
+**2. Install the SDK:**
+
+```bash
+pip install ai-coop-db
+```
+
+**3. Connect:**
+
+```python
+from aicoopdb import connect
+
+db = connect("https://db.example.com", api_key="acd_live_...")
+me = db.me()   # verify connectivity: {workspace, role, server}
+```
+
+### Schema initialisation
+
+The gateway enforces **one statement per HTTP call** (this prevents
+multi-statement injection). When replaying a schema file, send each statement
+as a separate `db.execute()` call. Use `CREATE … IF NOT EXISTS` / `DO $$ … $$`
+guards so the sequence is fully idempotent — re-running from any point is safe.
+
+### Multi-write atomicity
+
+For writes that must land together, use the CTE-wrapped transaction helper:
+
+```python
+with db.transaction() as tx:
+    tx.execute("INSERT INTO events (id, type) VALUES ($1, $2)", [eid, "start"])
+    tx.execute("UPDATE jobs SET status=$1 WHERE id=$2", ["running", jid])
+# Both writes execute as a single CTE-wrapped statement
+```
+
+### Vector / RAG
+
+```python
+# Store embeddings
+db.vector_upsert("documents", [
+    {"id": doc_id, "metadata": {"title": "…"}, "vector": embedding},
+])
+
+# Nearest-neighbour search
+results = db.vector_search("documents", query_embedding, k=5)
+```
+
+---
+
 ## How it stays safe
 
 PostgreSQL is the source of truth for what each key can do. The gateway only
@@ -92,7 +160,8 @@ enforces the minimum that Postgres cannot enforce by itself:
   parses the SQL and counts `$N` placeholders; mismatch = HTTP 400.
 - **Single statement only.** Stacked-statement injection is rejected at parse
   time.
-- **Statement size cap** (64 KiB) and **parameter count cap** (100).
+- **Statement size cap** (default 256 KiB, tunable via `AICOOPDB_MAX_STATEMENT_BYTES`)
+  and **parameter count cap** (default 1 000, tunable via `AICOOPDB_MAX_STATEMENT_PARAMS`).
 - **`SET LOCAL ROLE <key.role>`** before forwarding. The pool's login role is
   `aicoopdb_gateway`, a low-privilege role with no privileges of its own — it
   is only a *member* of the role each key is bound to.

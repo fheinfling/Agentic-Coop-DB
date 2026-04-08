@@ -59,8 +59,8 @@ type Config struct {
 	// SQL execution
 	StatementTimeout   time.Duration `envconfig:"STATEMENT_TIMEOUT" default:"5s" desc:"per-request statement_timeout (max 60s)"`
 	IdleInTxTimeout    time.Duration `envconfig:"IDLE_IN_TX_TIMEOUT" default:"5s"`
-	MaxStatementBytes  int           `envconfig:"MAX_STATEMENT_BYTES" default:"65536"`
-	MaxStatementParams int           `envconfig:"MAX_STATEMENT_PARAMS" default:"100"`
+	MaxStatementBytes  int           `envconfig:"MAX_STATEMENT_BYTES" default:"262144"`
+	MaxStatementParams int           `envconfig:"MAX_STATEMENT_PARAMS" default:"1000"`
 	DefaultSelectLimit int           `envconfig:"DEFAULT_SELECT_LIMIT" default:"1000"`
 	HardSelectLimit    int           `envconfig:"HARD_SELECT_LIMIT" default:"10000"`
 

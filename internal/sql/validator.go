@@ -21,10 +21,10 @@ type Validator struct {
 // NewValidator returns a Validator with sane defaults if cfg is zero.
 func NewValidator(cfg ValidatorConfig) *Validator {
 	if cfg.MaxStatementBytes <= 0 {
-		cfg.MaxStatementBytes = 64 * 1024
+		cfg.MaxStatementBytes = 256 * 1024
 	}
 	if cfg.MaxStatementParams <= 0 {
-		cfg.MaxStatementParams = 100
+		cfg.MaxStatementParams = 1000
 	}
 	return &Validator{cfg: cfg}
 }

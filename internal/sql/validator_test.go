@@ -7,11 +7,11 @@ import (
 
 func TestNewValidator_AppliesDefaults(t *testing.T) {
 	v := NewValidator(ValidatorConfig{})
-	if v.cfg.MaxStatementBytes != 64*1024 {
-		t.Errorf("MaxStatementBytes default: got %d, want %d", v.cfg.MaxStatementBytes, 64*1024)
+	if v.cfg.MaxStatementBytes != 256*1024 {
+		t.Errorf("MaxStatementBytes default: got %d, want %d", v.cfg.MaxStatementBytes, 256*1024)
 	}
-	if v.cfg.MaxStatementParams != 100 {
-		t.Errorf("MaxStatementParams default: got %d, want %d", v.cfg.MaxStatementParams, 100)
+	if v.cfg.MaxStatementParams != 1000 {
+		t.Errorf("MaxStatementParams default: got %d, want %d", v.cfg.MaxStatementParams, 1000)
 	}
 }
 

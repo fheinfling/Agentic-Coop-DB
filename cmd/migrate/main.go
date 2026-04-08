@@ -3,6 +3,7 @@
 // Usage:
 //
 //	AICOOPDB_MIGRATIONS_DATABASE_URL=postgres://aicoopdb_owner@host/db?sslmode=disable \
+//	AICOOPDB_OWNER_PASSWORD=...                                                         \
 //	  ai-coop-db-migrate up
 //
 // The same logic is embedded in cmd/server when AICOOPDB_MIGRATE_ON_START=true
@@ -11,25 +12,23 @@
 package main
 
 import (
-	"errors"
+	"context"
 	"flag"
 	"fmt"
 	"log/slog"
 	"os"
-
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/pgx/v5"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 
 	"github.com/fheinfling/ai-coop-db/internal/db"
 )
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintln(os.Stderr, `usage: ai-coop-db-migrate <up|down|version>
+		fmt.Fprintln(os.Stderr, `usage: ai-coop-db-migrate <up|version>
 
 env:
   AICOOPDB_MIGRATIONS_DATABASE_URL  postgres URL (login role: aicoopdb_owner)
+  AICOOPDB_OWNER_PASSWORD           password for the aicoopdb_owner role (optional; trust auth otherwise)
+  AICOOPDB_OWNER_PASSWORD_FILE      file containing the same (docker secret pattern)
   AICOOPDB_MIGRATIONS_DIR           override the migrations directory
 `)
 	}
@@ -45,37 +44,25 @@ env:
 		fmt.Fprintln(os.Stderr, "AICOOPDB_MIGRATIONS_DATABASE_URL is required")
 		os.Exit(2)
 	}
-
-	dir, err := db.MigrationsDir()
-	if err != nil {
-		fail(err)
+	password := os.Getenv("AICOOPDB_OWNER_PASSWORD")
+	if password == "" {
+		if path := os.Getenv("AICOOPDB_OWNER_PASSWORD_FILE"); path != "" {
+			b, err := os.ReadFile(path)
+			if err != nil {
+				fail(fmt.Errorf("read AICOOPDB_OWNER_PASSWORD_FILE: %w", err))
+			}
+			password = string(b)
+		}
 	}
-
-	m, err := migrate.New("file://"+dir, url)
-	if err != nil {
-		fail(fmt.Errorf("migrate.New: %w", err))
-	}
-	defer m.Close()
 
 	switch cmd {
 	case "up":
-		if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		if err := db.RunMigrations(context.Background(), url, password); err != nil {
 			fail(err)
 		}
-		slog.Default().Info("migrations applied", "dir", dir)
-	case "down":
-		// down 1 step at a time on purpose; full down is destructive enough that
-		// it should never be a single command.
-		if err := m.Steps(-1); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-			fail(err)
-		}
-		slog.Default().Info("migration reverted", "dir", dir)
+		slog.Default().Info("migrations applied")
 	case "version":
-		v, dirty, err := m.Version()
-		if err != nil && !errors.Is(err, migrate.ErrNilVersion) {
-			fail(err)
-		}
-		fmt.Printf("version=%d dirty=%t\n", v, dirty)
+		fmt.Println("ai-coop-db-migrate: only `up` is currently implemented; use `migrate -database ... -path migrations version` directly for advanced flows")
 	default:
 		flag.Usage()
 		os.Exit(2)

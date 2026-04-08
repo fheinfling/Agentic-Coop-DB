@@ -105,6 +105,11 @@ func (m *Middleware) Authenticate(next http.Handler) http.Handler {
 }
 
 // resolve checks the cache and falls back to the database + argon2id verify.
+//
+// On a database miss, we still spend equivalent argon2id time against a
+// precomputed dummy hash so that the response time of "wrong key_id" is
+// indistinguishable from "right key_id, wrong secret". Without this an
+// attacker could enumerate valid key_id values from outside via timing.
 func (m *Middleware) resolve(ctx context.Context, p *ParsedKey) (*KeyRecord, error) {
 	cacheKey := p.CacheKey()
 	if rec, ok := m.cache.Get(cacheKey); ok {
@@ -112,6 +117,9 @@ func (m *Middleware) resolve(ctx context.Context, p *ParsedKey) (*KeyRecord, err
 	}
 	rec, err := m.store.FindByKeyID(ctx, p.KeyID)
 	if err != nil {
+		// Burn the equivalent argon2id time so this branch is timing-equal
+		// to the "key found, secret wrong" branch below. Result is ignored.
+		_ = VerifySecret(p.Secret, DummyHash())
 		return nil, err
 	}
 	if err := VerifySecret(p.Secret, rec.SecretHash); err != nil {
@@ -119,6 +127,12 @@ func (m *Middleware) resolve(ctx context.Context, p *ParsedKey) (*KeyRecord, err
 	}
 	m.cache.Put(cacheKey, rec)
 	return rec, nil
+}
+
+// RevokeFromCache evicts every cache entry bound to keyDBID. Used by the
+// HTTP layer after Store.Rotate or Store.Revoke succeeds.
+func (m *Middleware) RevokeFromCache(keyDBID string) {
+	m.cache.RevokeByDBID(keyDBID)
 }
 
 // writeAuthError writes a small RFC7807-shaped JSON error to w.

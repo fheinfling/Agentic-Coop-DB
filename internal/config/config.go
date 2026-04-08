@@ -7,6 +7,8 @@ package config
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
@@ -33,6 +35,22 @@ type Config struct {
 	// Database (gateway pool — never connects as superuser)
 	DatabaseURL          string        `envconfig:"DATABASE_URL" required:"true" desc:"postgres URL the gateway pool uses (login role: aicoopdb_gateway)"`
 	MigrationsDatabaseURL string        `envconfig:"MIGRATIONS_DATABASE_URL" desc:"postgres URL used by cmd/migrate (login role: aicoopdb_owner). defaults to DATABASE_URL"`
+	// GatewayPassword is the password for the aicoopdb_gateway role. When
+	// set, the server runs ALTER ROLE WITH PASSWORD on it after migrations
+	// (so the role gets a password without baking it into a migration file)
+	// and injects it into the gateway pool's connection config. When empty
+	// (the local / pi-lite profiles, where postgres uses
+	// POSTGRES_HOST_AUTH_METHOD=trust), no password is set.
+	//
+	// `*_FILE` variant: AICOOPDB_GATEWAY_PASSWORD_FILE points at a file
+	// (typically /run/secrets/aicoopdb_gateway_password) whose contents are
+	// used. This is the standard docker / swarm secret-mount pattern.
+	GatewayPassword      string        `envconfig:"GATEWAY_PASSWORD" desc:"password for the aicoopdb_gateway role; required for cloud / swarm profiles, optional for local trust-auth dev. AICOOPDB_GATEWAY_PASSWORD_FILE is also accepted."`
+	// OwnerPassword is the password for the aicoopdb_owner role. The server
+	// uses it to (a) embed in the migrations URL when running migrations
+	// and (b) reconnect as the owner to ALTER ROLE the gateway password.
+	// Same `*_FILE` variant applies.
+	OwnerPassword        string        `envconfig:"OWNER_PASSWORD" desc:"password for the aicoopdb_owner role; same dual GATEWAY_PASSWORD vs *_FILE rules"`
 	DatabaseMaxConns     int32         `envconfig:"DATABASE_MAX_CONNS" default:"20"`
 	DatabaseMinConns     int32         `envconfig:"DATABASE_MIN_CONNS" default:"2"`
 	DatabaseConnLifetime time.Duration `envconfig:"DATABASE_CONN_LIFETIME" default:"30m"`
@@ -78,6 +96,19 @@ func Load() (*Config, error) {
 	if c.MigrationsDatabaseURL == "" {
 		c.MigrationsDatabaseURL = c.DatabaseURL
 	}
+	// Resolve `*_FILE` env vars for sensitive secrets. Docker / swarm
+	// mount secrets as files at /run/secrets/<name>; this is how operators
+	// pass them in without putting them in env-block strings.
+	if v, err := loadSecretFromFile("AICOOPDB_GATEWAY_PASSWORD", c.GatewayPassword); err != nil {
+		return nil, err
+	} else {
+		c.GatewayPassword = v
+	}
+	if v, err := loadSecretFromFile("AICOOPDB_OWNER_PASSWORD", c.OwnerPassword); err != nil {
+		return nil, err
+	} else {
+		c.OwnerPassword = v
+	}
 	if c.StatementTimeout > 60*time.Second {
 		return nil, fmt.Errorf("statement_timeout must be <= 60s, got %s", c.StatementTimeout)
 	}
@@ -93,4 +124,24 @@ func Load() (*Config, error) {
 // Usage prints an env var reference (used by `ai-coop-db-server -help-env`).
 func Usage() string {
 	return envconfig.Usage(EnvPrefix, &Config{}) //nolint:errcheck
+}
+
+// loadSecretFromFile resolves the docker-style `<name>_FILE` env var.
+// If `current` is non-empty (the operator passed the value directly via
+// the env var), it wins. Otherwise, if `<name>_FILE` is set, the file is
+// read and its trimmed contents returned. If neither is set, returns
+// the empty string.
+func loadSecretFromFile(envName, current string) (string, error) {
+	if current != "" {
+		return current, nil
+	}
+	path := os.Getenv(envName + "_FILE")
+	if path == "" {
+		return "", nil
+	}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("read %s_FILE %q: %w", envName, path, err)
+	}
+	return strings.TrimSpace(string(b)), nil
 }

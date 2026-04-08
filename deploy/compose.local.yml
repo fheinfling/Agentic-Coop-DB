@@ -28,7 +28,12 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     environment:
+      # Local-only: use trust auth for in-cluster connections so neither
+      # aicoopdb_owner nor aicoopdb_gateway needs a password. POSTGRES_PASSWORD
+      # is still required by the postgres image's docker-entrypoint, but it
+      # is never actually used as a credential when HOST_AUTH_METHOD=trust.
       POSTGRES_PASSWORD: "dev-only-not-a-real-password"
+      POSTGRES_HOST_AUTH_METHOD: "trust"
     secrets: []
     command:
       - "postgres"

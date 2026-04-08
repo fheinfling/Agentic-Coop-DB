@@ -8,6 +8,7 @@ nothing beyond JSON encode/decode and error mapping.
 from __future__ import annotations
 
 import json
+import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Iterator, Sequence
@@ -179,12 +180,24 @@ class AICoopDBClient:
         return with_retry(fn)
 
     def _post(self, path: str, body: dict[str, Any], headers: dict[str, str] | None = None) -> dict[str, Any]:
+        # Auto-generate an Idempotency-Key for any POST that does not already
+        # carry one. This is the only safe way to retry on transport-level
+        # errors (NetworkError / ServerError) without risking duplicate
+        # writes: with no key, a request that was sent but whose response
+        # was lost would be re-run. The key is generated ONCE before the
+        # retry loop so every retry attempt uses the same value.
+        merged: dict[str, str] = {}
+        if headers:
+            merged.update(headers)
+        if "Idempotency-Key" not in merged:
+            merged["Idempotency-Key"] = str(uuid.uuid4())
+
         def fn() -> dict[str, Any]:
             try:
                 r = self._session.post(
                     self.base_url + path,
                     data=json.dumps(body).encode("utf-8"),
-                    headers=headers or {},
+                    headers=merged,
                     timeout=self.timeout,
                     verify=self.verify_tls,
                 )

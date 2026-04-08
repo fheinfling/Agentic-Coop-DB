@@ -20,6 +20,7 @@ import (
 // PoolConfig is the input to OpenPool.
 type PoolConfig struct {
 	URL          string
+	Password     string // optional: injected into ConnConfig.Password if non-empty
 	MaxConns     int32
 	MinConns     int32
 	ConnLifetime time.Duration
@@ -34,6 +35,12 @@ func OpenPool(ctx context.Context, c PoolConfig) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(c.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parse: %w", err)
+	}
+	if c.Password != "" {
+		// Inject the password programmatically rather than baking it into the
+		// URL string. Keeps the URL grep-friendly in logs and lets us load
+		// the password from a docker secret without templating.
+		cfg.ConnConfig.Password = c.Password
 	}
 	if c.MaxConns > 0 {
 		cfg.MaxConns = c.MaxConns

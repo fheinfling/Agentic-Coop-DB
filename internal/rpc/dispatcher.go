@@ -39,10 +39,14 @@ func NewDispatcher(pool *pgxpool.Pool, registry *Registry, logger *slog.Logger) 
 // CallInput is what the HTTP handler hands the dispatcher.
 type CallInput struct {
 	WorkspaceID    string
-	PgRole         string                 // the calling key's role
-	Name           string                 // procedure name
-	Args           map[string]any         // raw decoded JSON args
-	IdempotencyKey string                 // optional Idempotency-Key header value
+	PgRole         string         // the calling key's role
+	Name           string         // procedure name
+	Args           map[string]any // raw decoded JSON args
+	IdempotencyKey string         // optional Idempotency-Key header value
+	// RequestHash is sha256(method+path+raw body). The HTTP handler computes
+	// it from the raw bytes before JSON parsing so it stays deterministic
+	// across re-encoding of nested JSON objects.
+	RequestHash      string
 	StatementTimeout time.Duration
 	IdleInTxTimeout  time.Duration
 }
@@ -87,10 +91,12 @@ func (d *Dispatcher) Call(ctx context.Context, in CallInput) (*CallResult, error
 		return nil, fmt.Errorf("rpc args validation: %w", err)
 	}
 
-	// Idempotency layer (optional).
-	requestHash := HashRequest("RPC", in.Name, "", []any{in.Args})
+	// Idempotency layer (optional). The HTTP handler precomputes the
+	// request hash over raw body bytes so the dispatcher does not have to
+	// re-canonicalise the parsed args (which would be non-deterministic
+	// for JSON objects with nested maps).
 	if in.IdempotencyKey != "" {
-		res, err := d.idem.BeginOrReplay(ctx, in.WorkspaceID, in.IdempotencyKey, requestHash, 24*time.Hour)
+		res, err := d.idem.BeginOrReplay(ctx, in.WorkspaceID, in.IdempotencyKey, in.RequestHash, 24*time.Hour)
 		if err != nil {
 			return nil, err
 		}

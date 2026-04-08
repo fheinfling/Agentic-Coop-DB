@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/crypto/argon2"
@@ -177,6 +178,34 @@ func subtleConstantTimeEq(a, b []byte) bool {
 func (p *ParsedKey) CacheKey() string {
 	sum := sha256.Sum256([]byte(p.FullToken))
 	return hex.EncodeToString(sum[:])
+}
+
+// dummyHash is a precomputed argon2id PHC string used by the middleware to
+// equalise response times when a key_id lookup misses. Without this, an
+// attacker could measure response time to enumerate valid key_id values
+// (a fast 401 means "key not found"; a slow 401 means "key found, secret
+// wrong"). Running VerifySecret against the dummy hash on miss makes both
+// paths take roughly the same time.
+//
+// Initialised lazily on first use so the cost is paid by the first request,
+// not by package init (which would slow down `aicoldb-server -version`).
+var (
+	dummyHash     string
+	dummyHashOnce sync.Once
+)
+
+// DummyHash returns the precomputed dummy argon2id PHC string. It is
+// idempotent and goroutine-safe.
+func DummyHash() string {
+	dummyHashOnce.Do(func() {
+		// Hash a fixed sentinel. The plaintext doesn't matter; only the
+		// time-cost of running argon2id matters.
+		h, err := HashSecret("aicoldb_dummy_secret_for_timing_safety")
+		if err == nil {
+			dummyHash = h
+		}
+	})
+	return dummyHash
 }
 
 // KeyRecord is the row stored in api_keys, plus the workspace metadata

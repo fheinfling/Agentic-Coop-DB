@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -49,19 +48,26 @@ func NewIdempotencyStore(pool *pgxpool.Pool) *IdempotencyStore {
 	return &IdempotencyStore{pool: pool}
 }
 
-// HashRequest produces a stable hash of the request payload. Used to detect
-// conflict (same key, different body).
-func HashRequest(method, path, sql string, params []any) string {
+// HashRequest produces a stable hash of the request payload.
+//
+// The hash is computed over the RAW request body bytes (not over a
+// re-encoded representation of the parsed struct), because Go's
+// encoding/json sorts top-level map keys but not nested ones, which
+// previously made the hash non-deterministic across logically-equivalent
+// requests with nested JSON objects.
+//
+// Two requests with the same Idempotency-Key are considered the same iff
+// their (method, path, body) tuples produce the same hash. Whitespace
+// differences inside the body therefore yield different hashes — which is
+// the right behaviour: the gateway has no business deciding that two
+// byte-different request bodies are "logically equivalent".
+func HashRequest(method, path string, body []byte) string {
 	h := sha256.New()
 	_, _ = io.WriteString(h, method)
-	_, _ = io.WriteString(h, "\x00")
+	_, _ = h.Write([]byte{0})
 	_, _ = io.WriteString(h, path)
-	_, _ = io.WriteString(h, "\x00")
-	_, _ = io.WriteString(h, sql)
-	_, _ = io.WriteString(h, "\x00")
-	if params != nil {
-		_ = json.NewEncoder(h).Encode(params)
-	}
+	_, _ = h.Write([]byte{0})
+	_, _ = h.Write(body)
 	return hex.EncodeToString(h.Sum(nil))
 }
 

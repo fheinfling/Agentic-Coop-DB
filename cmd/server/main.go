@@ -96,10 +96,34 @@ func run() error {
 	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// Open the gateway pool. The pool's login role is aicoopdb_gateway,
-	// which has no privileges of its own — see migration 0004.
+	// Migrations FIRST. /readyz only goes green once schema is at the
+	// version this binary expects, so we can't open the gateway pool until
+	// the role exists and (when applicable) has its password set.
+	var migrationsApplied atomic.Bool
+	if cfg.MigrateOnStart {
+		logger.Info("running pending migrations")
+		if err := db.RunMigrations(rootCtx, cfg.MigrationsDatabaseURL, cfg.OwnerPassword); err != nil {
+			return fmt.Errorf("migrate: %w", err)
+		}
+	}
+
+	// If GATEWAY_PASSWORD is set, write it onto the role via the migrations
+	// connection (which is the only role that can ALTER ROLE). This is the
+	// path the cloud / swarm profiles use; local dev uses
+	// POSTGRES_HOST_AUTH_METHOD=trust and leaves it unset.
+	if cfg.GatewayPassword != "" {
+		logger.Info("setting password on aicoopdb_gateway role")
+		if err := db.SetRolePassword(rootCtx, cfg.MigrationsDatabaseURL, cfg.OwnerPassword, "aicoopdb_gateway", cfg.GatewayPassword); err != nil {
+			return fmt.Errorf("set gateway password: %w", err)
+		}
+	}
+	migrationsApplied.Store(true)
+
+	// Now open the gateway pool. Login role is aicoopdb_gateway, which has
+	// CRUD on the aicoopdb schema only — see migrations 0004 + 0007.
 	pool, err := db.OpenPool(rootCtx, db.PoolConfig{
 		URL:          cfg.DatabaseURL,
+		Password:     cfg.GatewayPassword,
 		MaxConns:     cfg.DatabaseMaxConns,
 		MinConns:     cfg.DatabaseMinConns,
 		ConnLifetime: cfg.DatabaseConnLifetime,
@@ -108,17 +132,6 @@ func run() error {
 		return fmt.Errorf("db: %w", err)
 	}
 	defer pool.Close()
-
-	// Migrations: run on startup so /readyz only goes green once schema is
-	// at the version this binary expects. Toggleable via env.
-	var migrationsApplied atomic.Bool
-	if cfg.MigrateOnStart {
-		logger.Info("running pending migrations")
-		if err := db.RunMigrations(rootCtx, cfg.MigrationsDatabaseURL); err != nil {
-			return fmt.Errorf("migrate: %w", err)
-		}
-	}
-	migrationsApplied.Store(true)
 
 	// Auth, audit, validator, executor, RPC dispatcher.
 	authStore := auth.NewStore(pool)

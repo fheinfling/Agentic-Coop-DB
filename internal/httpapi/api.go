@@ -3,6 +3,7 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -40,6 +41,7 @@ type Deps struct {
 type API struct {
 	deps      Deps
 	rateLimit *RateLimit
+	idem      *rpc.IdempotencyStore
 }
 
 // New constructs an API.
@@ -47,6 +49,10 @@ func New(deps Deps) *API {
 	return &API{
 		deps:      deps,
 		rateLimit: NewRateLimit(deps.Config.RateLimitPerSecond, deps.Config.RateLimitBurst),
+		// Both /v1/sql/execute and /v1/rpc/call go through the same
+		// idempotency table; we instantiate one store at the API level so
+		// the SQL handler does not have to reach into the dispatcher.
+		idem: rpc.NewIdempotencyStore(deps.Pool),
 	}
 }
 
@@ -108,8 +114,17 @@ func (a *API) handleSQLExecute(w http.ResponseWriter, r *http.Request) {
 	ws := auth.MustFromContext(r.Context())
 	start := time.Now()
 
+	// Read the body once. The MaxBodyBytes middleware caps it. We hash the
+	// raw bytes for idempotency BEFORE JSON-parsing so the hash is
+	// deterministic across re-encodings of nested JSON.
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		WriteProblem(w, Problem{Title: "body_too_large", Status: http.StatusRequestEntityTooLarge, Detail: err.Error()})
+		return
+	}
+
 	var req sqlExecuteRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.Unmarshal(bodyBytes, &req); err != nil {
 		WriteProblem(w, Problem{Title: "invalid_json", Status: http.StatusBadRequest, Detail: err.Error()})
 		return
 	}
@@ -119,6 +134,32 @@ func (a *API) handleSQLExecute(w http.ResponseWriter, r *http.Request) {
 		a.audit(r, ws, "POST /v1/sql/execute", "", req.SQL, req.Params, start, http.StatusBadRequest, err)
 		return
 	}
+
+	// Optional idempotency layer. The same state machine the RPC dispatcher
+	// uses, sharing the same idempotency_keys table.
+	idemKey := r.Header.Get("Idempotency-Key")
+	if idemKey != "" {
+		hash := rpc.HashRequest(r.Method, r.URL.Path, bodyBytes)
+		ir, ierr := a.idem.BeginOrReplay(r.Context(), ws.WorkspaceID, idemKey, hash, 24*time.Hour)
+		if ierr != nil {
+			if errors.Is(ierr, rpc.IdempotencyConflict) {
+				WriteProblem(w, Problem{Title: "idempotency_conflict", Status: http.StatusConflict, Detail: ierr.Error()})
+				return
+			}
+			WriteProblem(w, Problem{Title: "idempotency_internal", Status: http.StatusInternalServerError, Detail: ierr.Error()})
+			return
+		}
+		if ir.Replay {
+			w.Header().Set("Content-Type", "application/json")
+			w.Header().Set("X-Idempotent-Replayed", "true")
+			w.WriteHeader(ir.StatusCode)
+			_, _ = w.Write(ir.Body)
+			a.deps.Metrics.IdempotencyHits.Inc()
+			return
+		}
+		a.deps.Metrics.IdempotencyMisses.Inc()
+	}
+
 	resp, err := a.deps.Executor.Execute(r.Context(), sqlpkg.ExecuteInput{
 		WorkspaceID: ws.WorkspaceID,
 		PgRole:      ws.PgRole,
@@ -131,9 +172,21 @@ func (a *API) handleSQLExecute(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, problem)
 		a.audit(r, ws, "POST /v1/sql/execute", res.Command, req.SQL, req.Params, start, problem.Status, err)
 		a.deps.Metrics.SQLStatements.WithLabelValues(res.Command, problem.SQLState).Inc()
+		// Persist the failure as `failed` so a replay returns the same error
+		// rather than re-running the statement.
+		if idemKey != "" {
+			body, _ := json.Marshal(problem)
+			_ = a.idem.Complete(r.Context(), ws.WorkspaceID, idemKey, problem.Status, body, false)
+		}
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	body, _ := json.Marshal(resp)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(body)
+	if idemKey != "" {
+		_ = a.idem.Complete(r.Context(), ws.WorkspaceID, idemKey, http.StatusOK, body, true)
+	}
 	a.audit(r, ws, "POST /v1/sql/execute", res.Command, req.SQL, req.Params, start, http.StatusOK, nil)
 	a.deps.Metrics.SQLStatements.WithLabelValues(res.Command, "00000").Inc()
 }
@@ -142,8 +195,13 @@ func (a *API) handleRPCCall(w http.ResponseWriter, r *http.Request) {
 	ws := auth.MustFromContext(r.Context())
 	start := time.Now()
 
+	bodyBytes, err := io.ReadAll(r.Body)
+	if err != nil {
+		WriteProblem(w, Problem{Title: "body_too_large", Status: http.StatusRequestEntityTooLarge, Detail: err.Error()})
+		return
+	}
 	var req rpcCallRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := json.Unmarshal(bodyBytes, &req); err != nil {
 		WriteProblem(w, Problem{Title: "invalid_json", Status: http.StatusBadRequest, Detail: err.Error()})
 		return
 	}
@@ -153,6 +211,7 @@ func (a *API) handleRPCCall(w http.ResponseWriter, r *http.Request) {
 		Name:             req.Procedure,
 		Args:             req.Args,
 		IdempotencyKey:   r.Header.Get("Idempotency-Key"),
+		RequestHash:      rpc.HashRequest(r.Method, r.URL.Path, bodyBytes),
 		StatementTimeout: a.deps.Config.StatementTimeout,
 		IdleInTxTimeout:  a.deps.Config.IdleInTxTimeout,
 	})
@@ -193,6 +252,12 @@ func (a *API) handleKeyRotate(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, MapError(err))
 		return
 	}
+	// Evict the OLD key from the in-memory verify cache so a stolen
+	// token cannot continue to authenticate until the cache TTL expires.
+	// The new key is not yet in the cache; the next request that uses it
+	// will populate it via the normal argon2id-verify path.
+	a.deps.AuthMiddleware.RevokeFromCache(ws.KeyDBID)
+
 	WriteJSON(w, http.StatusOK, rotateKeyResponse{
 		NewKeyID: created.KeyID,
 		Token:    created.FullToken,
@@ -215,9 +280,20 @@ func (a *API) handleKeyCreate(w http.ResponseWriter, r *http.Request) {
 		WriteProblem(w, Problem{Title: "invalid_json", Status: http.StatusBadRequest, Detail: err.Error()})
 		return
 	}
-	if req.WorkspaceID == "" {
-		req.WorkspaceID = ws.WorkspaceID
+	// dbadmin keys are scoped to ONE workspace. They may not mint keys for
+	// any other workspace, even by passing a different workspace_id in the
+	// request body. Cross-workspace minting would defeat the entire
+	// multi-tenant story: a compromised dbadmin key for tenant A would
+	// instantly become admin of every other tenant in the database.
+	if req.WorkspaceID != "" && req.WorkspaceID != ws.WorkspaceID {
+		WriteProblem(w, Problem{
+			Title:  "permission_denied",
+			Status: http.StatusForbidden,
+			Detail: "dbadmin keys can only mint keys for their own workspace",
+		})
+		return
 	}
+	req.WorkspaceID = ws.WorkspaceID
 	if req.Env == "" {
 		req.Env = string(ws.Env)
 	}

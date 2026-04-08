@@ -22,6 +22,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only `aicoopdb_gateway` has CRUD on. `dbadmin` keys can still do any
   DDL/DCL on user data in `public` — the privilege boundary is enforced
   at the schema level, not by restricting `dbadmin`.
+- **C3** — `internal/sql.Validator` now counts `$N` placeholders by
+  walking `pg_query.Scan` tokens instead of running `pg_query.Normalize`,
+  which previously inflated the count for any query that contained a
+  literal and made nearly every real-world request fail with
+  `params_mismatch`.
+- **C4** — `POST /v1/auth/keys` now rejects requests where
+  `workspace_id` differs from the calling key's workspace. A compromised
+  `dbadmin` key for tenant A can no longer mint keys for tenant B.
+- **C5** — proper password handling. New `AICOOPDB_GATEWAY_PASSWORD` and
+  `AICOOPDB_OWNER_PASSWORD` env vars (plus the docker `_FILE` variants);
+  the server runs `ALTER ROLE aicoopdb_gateway WITH PASSWORD` after
+  migrations and injects the password into the pool config. The
+  `compose.cloud.yml` profile mounts both as docker secrets. The local /
+  pi-lite profiles set `POSTGRES_HOST_AUTH_METHOD=trust` so the dev
+  experience stays passwordless.
+- **H1** — `auth.VerifyCache.RevokeByDBID` evicts every cached entry for
+  a key DB id. The HTTP rotate handler calls it after a successful
+  rotation, so revoked tokens stop working immediately instead of
+  surviving up to the LRU TTL (5 minutes).
+- **H2** — the auth middleware runs argon2id against a precomputed
+  dummy hash on `ErrKeyNotFound` so the response time of "wrong key_id"
+  is indistinguishable from "right key_id, wrong secret". Closes the
+  timing oracle that allowed external enumeration of valid key ids.
+- **H3** — `rpc.HashRequest` now hashes the raw request body bytes
+  (sha256 of `method | 0 | path | 0 | body`) instead of re-encoding the
+  parsed args, which was non-deterministic for nested JSON objects.
+- **H4** — `POST /v1/sql/execute` now honours `Idempotency-Key`,
+  sharing the same state machine as `/v1/rpc/call`. The Python SDK's
+  offline retry queue can finally claim "exactly once" with confidence.
+- **H5** — the Python SDK auto-generates an `Idempotency-Key` header
+  for every `_post` call that does not already have one, so retries on
+  transport-level errors no longer risk duplicate writes.
 
 ## [0.1.0] — 2026-04-08
 

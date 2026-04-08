@@ -1,9 +1,7 @@
 package sql
 
 import (
-	"errors"
 	"fmt"
-	"regexp"
 	"strconv"
 
 	pg_query "github.com/pganalyze/pg_query_go/v5"
@@ -173,28 +171,40 @@ func classify(node *pg_query.Node) string {
 	}
 }
 
-// placeholderRE matches $N tokens that are not inside a string literal or
-// dollar-quoted block. We use the parser's normalisation to identify the
-// max placeholder index in a single pass.
-var placeholderRE = regexp.MustCompile(`\$(\d+)`)
-
-// countPlaceholders returns the number of distinct $N values used in sqlText.
+// countPlaceholders returns the largest $N referenced in sqlText.
 //
-// We rely on pg_query.Normalize to strip string literals (and replace user
-// values with their own placeholders so the regex below cannot match a
-// $-token inside a quoted string). The result is the largest $N actually
-// referenced; we treat that as "the parameter arity Postgres will require".
+// We use pg_query.Scan to tokenise the SQL with the real PostgreSQL
+// scanner. This is the only way to distinguish a `$1` placeholder from a
+// `$1` substring inside a string literal (`'$1 off'`) or a dollar-quoted
+// block (`$tag$ ... $1 ... $tag$`). Earlier versions of this function
+// used pg_query.Normalize, which REPLACED literal values with new
+// placeholders and so falsely inflated the count for any query that
+// contained a literal — making practically every real-world request fail
+// validation with `params_mismatch`.
+//
+// We do not look at the token's enum value, only its text: anything that
+// the scanner emits as a single token starting with `$` followed by ASCII
+// digits is a placeholder. Dollar-quoted strings are emitted as a single
+// SCONST-shaped token whose text starts with `$<tag>$` (not all-digits
+// after the `$`), so they are skipped automatically.
 func countPlaceholders(sqlText string) (int, error) {
-	normalized, err := pg_query.Normalize(sqlText)
+	result, err := pg_query.Scan(sqlText)
 	if err != nil {
 		return 0, err
 	}
-	matches := placeholderRE.FindAllStringSubmatch(normalized, -1)
 	max := 0
-	for _, m := range matches {
-		n, err := strconv.Atoi(m[1])
+	for _, tok := range result.Tokens {
+		start, end := int(tok.Start), int(tok.End)
+		if start < 0 || end > len(sqlText) || start >= end {
+			continue
+		}
+		text := sqlText[start:end]
+		if len(text) < 2 || text[0] != '$' {
+			continue
+		}
+		n, err := strconv.Atoi(text[1:])
 		if err != nil {
-			return 0, errors.New("could not parse placeholder index")
+			continue // not a $N placeholder (likely $tag$ or $$)
 		}
 		if n > max {
 			max = n

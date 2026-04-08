@@ -25,9 +25,19 @@ services:
       AICOOPDB_LOG_FORMAT: "json"
       AICOOPDB_LOG_LEVEL: "info"
       AICOOPDB_METRICS_ENABLED: "true"
+      # Cloud profile uses scram-sha-256 auth on the postgres backend.
+      # The aicoopdb_gateway role is created by migration 0004 with no
+      # password; the server runs ALTER ROLE WITH PASSWORD on it after
+      # migrations using AICOOPDB_GATEWAY_PASSWORD, then opens the pool
+      # with that same password injected into ConnConfig.
+      AICOOPDB_GATEWAY_PASSWORD_FILE: /run/secrets/aicoopdb_gateway_password
+      AICOOPDB_OWNER_PASSWORD_FILE: /run/secrets/aicoopdb_owner_password
     networks:
       - frontend
       - backend
+    secrets:
+      - aicoopdb_gateway_password
+      - aicoopdb_owner_password
 
   postgres:
     networks:
@@ -127,3 +137,13 @@ networks:
 secrets:
   restic_password:
     file: ./secrets/restic_password.txt
+  # The aicoopdb_owner role IS the postgres user that the postgres image
+  # creates from POSTGRES_PASSWORD, so we reuse the same secret file the
+  # base compose.yml uses.
+  aicoopdb_owner_password:
+    file: ./secrets/postgres_password.txt
+  # The aicoopdb_gateway role gets its own dedicated password. Generate a
+  # fresh one with `head -c 32 /dev/urandom | base64 > deploy/secrets/aicoopdb_gateway_password.txt`
+  # before running `make up-cloud`.
+  aicoopdb_gateway_password:
+    file: ./secrets/aicoopdb_gateway_password.txt

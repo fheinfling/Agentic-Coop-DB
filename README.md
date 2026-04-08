@@ -1,6 +1,6 @@
 # Agentic Coop DB — auth gateway for shared PostgreSQL
 
-You can't expose Postgres on the public internet. Agentic Coop DB lets your apps talk
+You can't expose Postgres on the public internet. Agentic Coop DB lets your agents talk
 to a remote Postgres + pgvector instance using nothing but an HTTPS URL and an
 API key. CRUD SQL goes through unchanged — no new query language, no ORM
 lock-in.

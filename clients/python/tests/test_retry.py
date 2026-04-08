@@ -1,11 +1,11 @@
 """Unit tests for backoff() and with_retry()."""
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 from aicoopdb.errors import AuthError, NetworkError, RateLimited, ServerError, ValidationError
 from aicoopdb.retry import backoff, with_retry
-
 
 # ---- backoff() ---------------------------------------------------------------
 

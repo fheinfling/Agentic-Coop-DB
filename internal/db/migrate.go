@@ -46,13 +46,28 @@ func MigrationsDir() (string, error) {
 // password-free and supply the secret separately (e.g. via a docker
 // secret file). golang-migrate's pgx/v5 driver only takes a URL, so we
 // have to embed the password in the connection string.
-func RunMigrations(_ context.Context, migrationsURL, password string) error {
+//
+// Operators write `postgres://...` (the standard scheme) but the
+// golang-migrate pgx/v5 driver registers itself under `pgx5://`.
+// We rewrite the scheme transparently so operators never need to know.
+//
+// Any password present in either the URL or the `password` argument is
+// scrubbed from returned errors before they bubble up — golang-migrate
+// happily embeds the full connection string in its error messages.
+func RunMigrations(_ context.Context, migrationsURL, password string) (err error) {
+	defer func() {
+		err = redactSecrets(err, password, urlPassword(migrationsURL))
+	}()
 	if migrationsURL == "" {
 		return errors.New("RunMigrations: empty migrations URL")
 	}
 	finalURL, err := injectPassword(migrationsURL, password)
 	if err != nil {
 		return fmt.Errorf("inject password: %w", err)
+	}
+	finalURL, err = rewriteSchemeForMigrate(finalURL)
+	if err != nil {
+		return fmt.Errorf("rewrite scheme: %w", err)
 	}
 	dir, err := MigrationsDir()
 	if err != nil {
@@ -69,6 +84,65 @@ func RunMigrations(_ context.Context, migrationsURL, password string) error {
 		return fmt.Errorf("migrate.Up: %w", err)
 	}
 	return nil
+}
+
+// rewriteSchemeForMigrate normalizes the URL scheme to `pgx5`, which is
+// the name golang-migrate's pgx/v5 driver registers under. Operators
+// write the standard `postgres://` (or `postgresql://`) scheme; pgx
+// itself accepts either, so we only need to rewrite when handing the
+// URL to golang-migrate.
+func rewriteSchemeForMigrate(rawURL string) (string, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+	switch u.Scheme {
+	case "postgres", "postgresql":
+		u.Scheme = "pgx5"
+	case "pgx5":
+		// already correct
+	default:
+		return "", fmt.Errorf("unsupported scheme %q (expected postgres / postgresql / pgx5)", u.Scheme)
+	}
+	return u.String(), nil
+}
+
+// urlPassword returns the password embedded in a URL's userinfo section,
+// or "" if there is none / the URL fails to parse. Used by callers that
+// want to redact the original URL's secret without re-parsing it.
+func urlPassword(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil || u.User == nil {
+		return ""
+	}
+	pw, _ := u.User.Password()
+	return pw
+}
+
+// redactSecrets returns a new error whose message has each non-empty
+// secret literally replaced with "REDACTED". Errors are flattened to
+// strings — callers that rely on errors.Is / errors.As against the
+// underlying type should not use this; for boot-time errors that go
+// straight to the logger this is the right tradeoff.
+func redactSecrets(err error, secrets ...string) error {
+	if err == nil {
+		return nil
+	}
+	msg := err.Error()
+	changed := false
+	for _, s := range secrets {
+		if s == "" {
+			continue
+		}
+		if strings.Contains(msg, s) {
+			msg = strings.ReplaceAll(msg, s, "REDACTED")
+			changed = true
+		}
+	}
+	if !changed {
+		return err
+	}
+	return errors.New(msg)
 }
 
 // injectPassword returns rawURL with password set, leaving the rest of the
@@ -101,7 +175,13 @@ func injectPassword(rawURL, password string) (string, error) {
 // PASSWORD '...' clause is parsed as a literal, not a parameter, so $1
 // binding does not apply here. Single quotes are escaped by doubling per
 // the SQL standard, which is exactly how Postgres parses string literals.
-func SetRolePassword(ctx context.Context, migrationsURL, ownerPassword, role, newPassword string) error {
+func SetRolePassword(ctx context.Context, migrationsURL, ownerPassword, role, newPassword string) (err error) {
+	defer func() {
+		// Scrub both the owner password (used to connect) and the new
+		// password (which appears in the ALTER ROLE statement and could
+		// surface in a SQL error if the connection drops mid-statement).
+		err = redactSecrets(err, ownerPassword, newPassword, urlPassword(migrationsURL))
+	}()
 	if !isSafeIdent(role) {
 		return fmt.Errorf("SetRolePassword: unsafe role identifier %q", role)
 	}

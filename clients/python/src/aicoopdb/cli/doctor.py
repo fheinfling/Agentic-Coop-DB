@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
+from typing import NoReturn
 
 import typer
 
@@ -103,6 +104,6 @@ def _warn(name: str, detail: str) -> None:
     typer.echo(f"  [WARN] {name}: {detail}")
 
 
-def _fail(msg: str) -> None:
+def _fail(msg: str) -> NoReturn:
     typer.echo(f"  [FAIL] {msg}", err=True)
     raise typer.Exit(code=1)

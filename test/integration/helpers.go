@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/require"
 	tcpg "github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -99,6 +100,21 @@ func StartHarness(t *testing.T) *Harness {
 	// the URL alone (injectPassword treats an empty password as a no-op).
 	require.NoError(t, db.RunMigrations(ctx, dsn, ""))
 
+	// In production the gateway pool's role (aicoopdb_gateway) has its
+	// search_path set to "aicoopdb, public" by migration 0007, so bare
+	// table names like `api_keys` resolve to `aicoopdb.api_keys`. In
+	// these in-process tests we reuse the migration owner DSN as the
+	// pool DSN (no separate gateway-role bootstrap), and aicoopdb_owner
+	// has the default search_path of "$user", public — which does NOT
+	// include aicoopdb. Patch it here so auth.Store and the rest of the
+	// API code can keep using bare table names without test-specific
+	// changes.
+	patchConn, err := pgx.Connect(ctx, dsn)
+	require.NoError(t, err)
+	_, err = patchConn.Exec(ctx, `ALTER ROLE aicoopdb_owner SET search_path TO aicoopdb, public`)
+	require.NoError(t, err)
+	require.NoError(t, patchConn.Close(ctx))
+
 	// Reconnect as the gateway role for the pool. The migrations create
 	// aicoopdb_gateway and grant it dbadmin/dbuser membership.
 	gatewayDSN := dsn // testcontainers gives us the owner DSN; for tests we
@@ -165,10 +181,17 @@ func StartHarness(t *testing.T) *Harness {
 func (h *Harness) MintWorkspaceAndKey(ctx context.Context, name, role string) (workspaceID, token string) {
 	h.T.Helper()
 	wsID := newUUID()
-	_, err := h.Pool.Exec(ctx,
-		`INSERT INTO workspaces (id, name) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING`,
-		wsID, name,
-	)
+	// Migration 0007 moved control-plane tables from `public` to the
+	// `aicoopdb` schema. The pool here logs in as aicoopdb_owner whose
+	// default search_path is "$user, public", so we have to qualify
+	// the schema explicitly. Also: workspaces.name has no UNIQUE
+	// constraint so ON CONFLICT (name) won't bind — use a not-exists
+	// guard instead.
+	_, err := h.Pool.Exec(ctx, `
+		INSERT INTO aicoopdb.workspaces (id, name)
+		SELECT $1, $2
+		WHERE NOT EXISTS (SELECT 1 FROM aicoopdb.workspaces WHERE name = $2)
+	`, wsID, name)
 	require.NoError(h.T, err)
 	created, err := h.Auth.Create(ctx, auth.CreateKeyInput{
 		WorkspaceID: wsID,

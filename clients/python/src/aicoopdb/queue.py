@@ -26,7 +26,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from aicoopdb.errors import AICoopDBError, NetworkError, QueueFullError
 from aicoopdb.retry import backoff
@@ -194,6 +194,9 @@ class Queue:
 
 
 # Sender is the callable signature flush() expects: takes a QueueItem and
-# either succeeds (the item is acked) or raises.
-class Sender:
+# either succeeds (the item is acked) or raises. Declared as a Protocol so
+# that any structurally-compatible callable (a plain function, a bound
+# method, a lambda, ...) is accepted by mypy in strict mode without
+# requiring callers to subclass.
+class Sender(Protocol):
     def __call__(self, item: QueueItem) -> None: ...  # pragma: no cover - protocol

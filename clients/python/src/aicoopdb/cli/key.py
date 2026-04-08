@@ -7,7 +7,7 @@ import json
 import typer
 
 from aicoopdb import connect
-from aicoopdb.cli.config import load as load_config
+from aicoopdb.cli.config import CLIConfig, load as load_config
 
 key_app = typer.Typer(no_args_is_help=True)
 
@@ -39,7 +39,7 @@ def rotate() -> None:
     typer.echo("\nstore the token above NOW — it is shown exactly once")
 
 
-def _cfg():  # type: ignore[no-untyped-def]
+def _cfg() -> CLIConfig:
     cfg = load_config()
     if cfg is None:
         typer.echo("no config found — run `ai-coop-db init` first", err=True)

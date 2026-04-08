@@ -205,10 +205,8 @@ func run() error {
 		MaxStatementParams: cfg.MaxStatementParams,
 	})
 	executor := sqlpkg.NewExecutor(pool, sqlpkg.ExecutorConfig{
-		StatementTimeout:   cfg.StatementTimeout,
-		IdleInTxTimeout:    cfg.IdleInTxTimeout,
-		DefaultSelectLimit: cfg.DefaultSelectLimit,
-		HardSelectLimit:    cfg.HardSelectLimit,
+		StatementTimeout: cfg.StatementTimeout,
+		IdleInTxTimeout:  cfg.IdleInTxTimeout,
 	})
 
 	rpcRegistry := rpc.NewRegistry()

@@ -61,8 +61,6 @@ type Config struct {
 	IdleInTxTimeout    time.Duration `envconfig:"IDLE_IN_TX_TIMEOUT" default:"5s"`
 	MaxStatementBytes  int           `envconfig:"MAX_STATEMENT_BYTES" default:"262144"`
 	MaxStatementParams int           `envconfig:"MAX_STATEMENT_PARAMS" default:"1000"`
-	DefaultSelectLimit int           `envconfig:"DEFAULT_SELECT_LIMIT" default:"1000"`
-	HardSelectLimit    int           `envconfig:"HARD_SELECT_LIMIT" default:"10000"`
 
 	// Auth
 	AuthCacheSize    int           `envconfig:"AUTH_CACHE_SIZE" default:"1024"`
@@ -112,9 +110,6 @@ func Load() (*Config, error) {
 	}
 	if c.StatementTimeout > 60*time.Second {
 		return nil, fmt.Errorf("statement_timeout must be <= 60s, got %s", c.StatementTimeout)
-	}
-	if c.HardSelectLimit < c.DefaultSelectLimit {
-		return nil, fmt.Errorf("HARD_SELECT_LIMIT (%d) must be >= DEFAULT_SELECT_LIMIT (%d)", c.HardSelectLimit, c.DefaultSelectLimit)
 	}
 	if c.MaxStatementParams <= 0 {
 		return nil, fmt.Errorf("MAX_STATEMENT_PARAMS must be > 0")

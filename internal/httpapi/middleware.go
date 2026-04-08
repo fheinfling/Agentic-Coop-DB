@@ -103,7 +103,9 @@ func (r *RateLimit) Middleware(next http.Handler) http.Handler {
 			key = ws.KeyDBID
 		}
 		lim := r.limiterFor(key)
+		w.Header().Set("X-RateLimit-Limit", strconv.Itoa(int(lim.Limit())))
 		if !lim.Allow() {
+			w.Header().Set("X-RateLimit-Remaining", "0")
 			w.Header().Set("Retry-After", "1")
 			WriteProblem(w, Problem{
 				Title:  "rate_limited",
@@ -112,6 +114,7 @@ func (r *RateLimit) Middleware(next http.Handler) http.Handler {
 			})
 			return
 		}
+		w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(int(lim.Tokens())))
 		next.ServeHTTP(w, req)
 	})
 }

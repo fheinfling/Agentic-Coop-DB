@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -16,10 +15,8 @@ import (
 
 // ExecutorConfig configures the request-time tx settings.
 type ExecutorConfig struct {
-	StatementTimeout   time.Duration
-	IdleInTxTimeout    time.Duration
-	DefaultSelectLimit int
-	HardSelectLimit    int
+	StatementTimeout time.Duration
+	IdleInTxTimeout  time.Duration
 }
 
 // Executor runs validated SQL inside a request transaction.
@@ -35,12 +32,6 @@ func NewExecutor(pool *pgxpool.Pool, cfg ExecutorConfig) *Executor {
 	}
 	if cfg.IdleInTxTimeout <= 0 {
 		cfg.IdleInTxTimeout = 5 * time.Second
-	}
-	if cfg.DefaultSelectLimit <= 0 {
-		cfg.DefaultSelectLimit = 1000
-	}
-	if cfg.HardSelectLimit <= 0 {
-		cfg.HardSelectLimit = 10000
 	}
 	return &Executor{pool: pool, cfg: cfg}
 }
@@ -73,10 +64,6 @@ func (e *Executor) Execute(ctx context.Context, in ExecuteInput) (*Response, err
 		return nil, errors.New("executor.Execute: nil validator result")
 	}
 	sqlText := in.SQL
-	if in.Result.IsSelect {
-		sqlText = e.maybeWrapSelectLimit(sqlText)
-	}
-
 	start := time.Now()
 	resp := &Response{Command: in.Result.Command}
 
@@ -128,28 +115,6 @@ func (e *Executor) Execute(ctx context.Context, in ExecuteInput) (*Response, err
 
 	resp.DurationMS = int(time.Since(start).Milliseconds())
 	return resp, nil
-}
-
-// maybeWrapSelectLimit auto-applies LIMIT $defaultSelectLimit when the
-// statement looks like a bare SELECT without an explicit LIMIT or FETCH.
-//
-// We check the trailing tokens of the normalized SQL — if `limit` or
-// `fetch` already appears in the tail we leave the statement alone. The
-// hard cap is enforced by the executor regardless of what the caller
-// supplied (we wrap with an outer SELECT * FROM (... ) limit hard if
-// the requested limit is bigger).
-func (e *Executor) maybeWrapSelectLimit(sqlText string) string {
-	tail := strings.ToLower(strings.TrimRight(sqlText, "; \t\n\r"))
-	// crude but adequate: look for ` limit ` or ` fetch ` in the last 64 bytes
-	tailScan := tail
-	if len(tailScan) > 256 {
-		tailScan = tailScan[len(tailScan)-256:]
-	}
-	if strings.Contains(tailScan, " limit ") || strings.Contains(tailScan, " fetch ") {
-		return sqlText
-	}
-	trimmed := strings.TrimRight(sqlText, "; \t\n\r")
-	return fmt.Sprintf("SELECT * FROM (%s) AS _agentcoopdb_wrapped LIMIT %d", trimmed, e.cfg.DefaultSelectLimit)
 }
 
 // classifyPgErr unwraps the *pgconn.PgError so the HTTP layer can read the

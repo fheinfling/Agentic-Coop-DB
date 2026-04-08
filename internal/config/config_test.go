@@ -84,16 +84,6 @@ func TestLoad_RejectsStatementTimeoutAbove60s(t *testing.T) {
 	}
 }
 
-func TestLoad_RejectsHardLimitBelowDefaultLimit(t *testing.T) {
-	clearAGENTCOOPDBEnv(t)
-	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@host/db")
-	t.Setenv("AGENTCOOPDB_DEFAULT_SELECT_LIMIT", "1000")
-	t.Setenv("AGENTCOOPDB_HARD_SELECT_LIMIT", "500")
-	if _, err := Load(); err == nil {
-		t.Fatal("Load with HARD_SELECT_LIMIT < DEFAULT_SELECT_LIMIT: expected error, got nil")
-	}
-}
-
 func TestLoad_RejectsZeroMaxStatementParams(t *testing.T) {
 	clearAGENTCOOPDBEnv(t)
 	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@host/db")

@@ -13,7 +13,7 @@ independently sufficient for its threat.
 - **Single statement only.** `pg_query.Parse` returns a list of top-level
   statements; the validator rejects anything other than a list of length 1.
   This blocks the canonical `'; DROP TABLE users; --` chain.
-- **Statement size cap** (64 KiB) and **parameter count cap** (100).
+- **Statement size cap** (default 256 KiB, tunable via `AGENTCOOPDB_MAX_STATEMENT_BYTES`) and **parameter count cap** (default 1 000, tunable via `AGENTCOOPDB_MAX_STATEMENT_PARAMS`).
 - **Server-side parameter binding.** The executor uses pgx's positional
   binding (`tx.Query(ctx, sql, args...)`); values are sent as a separate
   field on the wire and never interpolated into the SQL text.
@@ -104,8 +104,7 @@ independently sufficient for its threat.
   params_hash, duration_ms, error_code, client_ip`. The full SQL/params go
   to the slog stream by default; `--audit-include-sql` enables full capture
   for compliance use cases.
-- **Rate limiting**: per-key token bucket, default 60 req/s burst 120,
-  configurable. Returns HTTP 429 with `Retry-After`.
+- **Rate limiting**: per-key token bucket, default 60 req/s sustained / 120 burst. Every response carries `X-RateLimit-Limit` and `X-RateLimit-Remaining` headers so clients can track headroom. 429 responses additionally include `Retry-After: 1`.
 - **Request size limits**: 1 MiB request body, 8 MiB response body default.
 - **Timeouts**: read header 5s, read 10s, write 30s, idle 120s, statement
   timeout 5s (per request, configurable up to 60s).

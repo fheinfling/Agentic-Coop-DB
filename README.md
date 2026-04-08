@@ -1,6 +1,6 @@
-# AI Coop DB — auth gateway for shared PostgreSQL
+# Agentic Coop DB — auth gateway for shared PostgreSQL
 
-You can't expose Postgres on the public internet. AI Coop DB lets your apps talk
+You can't expose Postgres on the public internet. Agentic Coop DB lets your apps talk
 to a remote Postgres + pgvector instance using nothing but an HTTPS URL and an
 API key. CRUD SQL goes through unchanged — no new query language, no ORM
 lock-in.
@@ -36,8 +36,8 @@ If you can write SQL, you can use it. `SELECT`, `INSERT`, `UPDATE`, `DELETE`,
 ## 30-second quickstart
 
 ```bash
-git clone https://github.com/fheinfling/ai-coop-db.git
-cd ai-coop-db
+git clone https://github.com/fheinfling/agentic-coop-db.git
+cd agentic-coop-db
 make up-local        # builds image, starts postgres + api, runs migrations
 ./scripts/gen-key.sh default dbadmin
 # prints: acd_dev_<id>_<secret>   <-- copy this once, it is shown only here
@@ -47,7 +47,7 @@ Then from any app:
 
 **Python**
 ```python
-from aicoopdb import connect
+from agentcoopdb import connect
 
 db = connect("http://localhost:8080", api_key="acd_dev_...")
 db.execute(
@@ -107,13 +107,13 @@ The gateway is a natural fit for AI agent workloads:
 **2. Install the SDK:**
 
 ```bash
-pip install ai-coop-db
+pip install agentic-coop-db
 ```
 
 **3. Connect:**
 
 ```python
-from aicoopdb import connect
+from agentcoopdb import connect
 
 db = connect("https://db.example.com", api_key="acd_live_...")
 me = db.me()   # verify connectivity: {workspace, role, server}
@@ -160,10 +160,10 @@ enforces the minimum that Postgres cannot enforce by itself:
   parses the SQL and counts `$N` placeholders; mismatch = HTTP 400.
 - **Single statement only.** Stacked-statement injection is rejected at parse
   time.
-- **Statement size cap** (default 256 KiB, tunable via `AICOOPDB_MAX_STATEMENT_BYTES`)
-  and **parameter count cap** (default 1 000, tunable via `AICOOPDB_MAX_STATEMENT_PARAMS`).
+- **Statement size cap** (default 256 KiB, tunable via `AGENTCOOPDB_MAX_STATEMENT_BYTES`)
+  and **parameter count cap** (default 1 000, tunable via `AGENTCOOPDB_MAX_STATEMENT_PARAMS`).
 - **`SET LOCAL ROLE <key.role>`** before forwarding. The pool's login role is
-  `aicoopdb_gateway`, a low-privilege role with no privileges of its own — it
+  `agentcoopdb_gateway`, a low-privilege role with no privileges of its own — it
   is only a *member* of the role each key is bound to.
 - **Built-in roles:** `dbadmin` (DDL/DCL, owner of `public`, `BYPASSRLS`,
   not superuser) and `dbuser` (CRUD, `NOBYPASSRLS`).
@@ -215,7 +215,7 @@ Full reference: [`docs/api.md`](docs/api.md).
 - `cmd/migrate` — standalone migrator (also embedded in the server)
 - `internal/` — implementation (clean layered architecture)
 - `migrations/` — numbered SQL migrations (golang-migrate)
-- `clients/python` — Python SDK + CLI (`pip install ai-coop-db`)
+- `clients/python` — Python SDK + CLI (`pip install agentic-coop-db`)
 - `deploy/` — compose files for local, pi-lite, cloud, swarm
 - `docs/` — architecture, deployment, security, ADRs, feature roadmap
 - `test/integration` — testcontainers-go full-stack tests
@@ -242,7 +242,7 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md). All commits must be signed off
 (`git commit -s`) under the Developer Certificate of Origin.
 
 Good first issues are tracked under the
-[`good-first-issue`](https://github.com/fheinfling/ai-coop-db/labels/good-first-issue)
+[`good-first-issue`](https://github.com/fheinfling/agentic-coop-db/labels/good-first-issue)
 label and as Markdown files in [`docs/features/`](docs/features/).
 
 ## Security

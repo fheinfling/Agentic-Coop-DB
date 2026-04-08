@@ -1,10 +1,10 @@
-"""Unit tests for the aicoopdb error hierarchy."""
+"""Unit tests for the agentcoopdb error hierarchy."""
 
 from __future__ import annotations
 
 import pytest
 
-from aicoopdb.errors import (
+from agentcoopdb.errors import (
     AICoopDBError,
     AuthError,
     IdempotencyConflict,

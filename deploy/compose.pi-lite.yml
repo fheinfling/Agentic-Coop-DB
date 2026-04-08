@@ -8,15 +8,15 @@
 
 services:
   api:
-    image: ghcr.io/fheinfling/ai-coop-db-server:latest
+    image: ghcr.io/fheinfling/agentic-coop-db-server:latest
     ports:
       - "8080:8080"
     environment:
-      AICOOPDB_DATABASE_MAX_CONNS: "8"
-      AICOOPDB_DATABASE_MIN_CONNS: "1"
-      AICOOPDB_RATE_LIMIT_PER_SECOND: "30"
-      AICOOPDB_RATE_LIMIT_BURST: "60"
-      AICOOPDB_INSECURE_HTTP: "true"
+      AGENTCOOPDB_DATABASE_MAX_CONNS: "8"
+      AGENTCOOPDB_DATABASE_MIN_CONNS: "1"
+      AGENTCOOPDB_RATE_LIMIT_PER_SECOND: "30"
+      AGENTCOOPDB_RATE_LIMIT_BURST: "60"
+      AGENTCOOPDB_INSECURE_HTTP: "true"
     deploy:
       resources:
         limits:

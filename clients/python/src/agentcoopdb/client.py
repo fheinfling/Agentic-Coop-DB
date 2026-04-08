@@ -1,4 +1,4 @@
-"""HTTP client for the AI Coop DB gateway.
+"""HTTP client for the Agentic Coop DB gateway.
 
 This module is the only place that talks to the network. It is intentionally
 small: the gateway endpoint is `{sql, params}` so the wrapper does almost
@@ -16,7 +16,7 @@ from typing import Any
 
 import requests
 
-from aicoopdb.errors import (
+from agentcoopdb.errors import (
     AICoopDBError,
     AuthError,
     IdempotencyConflict,
@@ -25,7 +25,7 @@ from aicoopdb.errors import (
     ServerError,
     ValidationError,
 )
-from aicoopdb.retry import with_retry
+from agentcoopdb.retry import with_retry
 
 
 @dataclass
@@ -60,7 +60,7 @@ class AICoopDBClient:
             {
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
-                "User-Agent": "aicoopdb-python/0.1.0",
+                "User-Agent": "agentcoopdb-python/0.1.0",
             }
         )
 
@@ -264,7 +264,7 @@ class TransactionBuilder:
         idx = 0
         for i, (sql, params) in enumerate(self._statements[:-1]):
             renumbered, idx = _renumber(sql, idx)
-            ctes.append(f"_aicoopdb_w{i} AS ({renumbered})")
+            ctes.append(f"_agentcoopdb_w{i} AS ({renumbered})")
             params_all.extend(params)
         last_sql, last_params = self._statements[-1]
         renumbered_last, _ = _renumber(last_sql, idx)

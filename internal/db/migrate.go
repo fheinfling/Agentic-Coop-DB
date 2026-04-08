@@ -18,11 +18,11 @@ import (
 // MigrationsDir returns the directory where migrations live.
 //
 // Resolution order:
-//  1. AICOOPDB_MIGRATIONS_DIR if set
+//  1. AGENTCOOPDB_MIGRATIONS_DIR if set
 //  2. /app/migrations (the path baked into the docker image)
 //  3. ./migrations relative to the working directory (dev)
 func MigrationsDir() (string, error) {
-	if d := os.Getenv("AICOOPDB_MIGRATIONS_DIR"); d != "" {
+	if d := os.Getenv("AGENTCOOPDB_MIGRATIONS_DIR"); d != "" {
 		return d, nil
 	}
 	for _, candidate := range []string{"/app/migrations", "migrations"} {
@@ -34,11 +34,11 @@ func MigrationsDir() (string, error) {
 			return abs, nil
 		}
 	}
-	return "", errors.New("migrations directory not found (set AICOOPDB_MIGRATIONS_DIR)")
+	return "", errors.New("migrations directory not found (set AGENTCOOPDB_MIGRATIONS_DIR)")
 }
 
 // RunMigrations applies every pending migration as the role described by
-// migrationsURL (typically aicoopdb_owner). It is safe to call repeatedly;
+// migrationsURL (typically agentcoopdb_owner). It is safe to call repeatedly;
 // migrate.ErrNoChange is treated as a no-op.
 //
 // If `password` is non-empty, it is injected into the URL via net/url so
@@ -162,20 +162,20 @@ func injectPassword(rawURL, password string) (string, error) {
 	return u.String(), nil
 }
 
-// EnsureOwnerRole creates the `aicoopdb_owner` role if it does not yet
+// EnsureOwnerRole creates the `agentcoopdb_owner` role if it does not yet
 // exist. Migration 0007 references this role as the owner of the new
-// `aicoopdb` schema (CREATE SCHEMA ... AUTHORIZATION aicoopdb_owner),
+// `agentcoopdb` schema (CREATE SCHEMA ... AUTHORIZATION agentcoopdb_owner),
 // so it must exist *before* migrations run.
 //
 // In the bundled-PG profiles (compose.local.yml, compose.cloud.yml,
 // compose.pi-lite.yml), the postgres image creates this role at init
-// time via POSTGRES_USER=aicoopdb_owner. In the external-PG profile
+// time via POSTGRES_USER=agentcoopdb_owner. In the external-PG profile
 // the migration user is the managed-PG superuser (e.g. `postgres`) and
 // nothing else creates the role — so this function is the bridge.
 //
 // The role is created as NOLOGIN: it exists only to own a schema and
 // hold default privileges. Connection pooling still happens through
-// `aicoopdb_gateway`. The function is idempotent — if the role already
+// `agentcoopdb_gateway`. The function is idempotent — if the role already
 // exists (bundled case), the IF NOT EXISTS guard makes it a no-op.
 func EnsureOwnerRole(ctx context.Context, migrationsURL, ownerPassword string) (err error) {
 	defer func() {
@@ -193,18 +193,18 @@ func EnsureOwnerRole(ctx context.Context, migrationsURL, ownerPassword string) (
 	const stmt = `
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'aicoopdb_owner') THEN
-        CREATE ROLE aicoopdb_owner NOLOGIN CREATEDB CREATEROLE;
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentcoopdb_owner') THEN
+        CREATE ROLE agentcoopdb_owner NOLOGIN CREATEDB CREATEROLE;
     END IF;
 END$$;`
 	if _, err := conn.Exec(ctx, stmt); err != nil {
-		return fmt.Errorf("create aicoopdb_owner: %w", err)
+		return fmt.Errorf("create agentcoopdb_owner: %w", err)
 	}
 	return nil
 }
 
 // SetRolePassword opens a short-lived connection as the migrations role
-// (typically aicoopdb_owner) and runs ALTER ROLE <role> WITH PASSWORD.
+// (typically agentcoopdb_owner) and runs ALTER ROLE <role> WITH PASSWORD.
 //
 // This is the bridge between cloud deployments and the postgres
 // `scram-sha-256` default: the gateway role created by migration 0004 has

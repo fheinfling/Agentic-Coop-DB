@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from aicoopdb.errors import AuthError, NetworkError, RateLimited, ServerError, ValidationError
-from aicoopdb.retry import backoff, with_retry
+from agentcoopdb.errors import AuthError, NetworkError, RateLimited, ServerError, ValidationError
+from agentcoopdb.retry import backoff, with_retry
 
 # ---- backoff() ---------------------------------------------------------------
 

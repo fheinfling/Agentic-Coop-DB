@@ -1,5 +1,5 @@
 -- 0005_pgvector.up.sql
--- Enable pgvector. Runs as aicoopdb_owner so the CREATE EXTENSION is allowed.
+-- Enable pgvector. Runs as agentcoopdb_owner so the CREATE EXTENSION is allowed.
 --
 -- Index strategy: leave it to the application. IVFFlat / HNSW are both
 -- fine; the right choice depends on row count and query mix. internal/vector

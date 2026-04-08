@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/fheinfling/ai-coop-db/internal/auth"
+	"github.com/fheinfling/agentic-coop-db/internal/auth"
 )
 
 // MintKey creates a new API key in the database and returns the full
@@ -16,9 +16,9 @@ import (
 // the user — only the argon2id hash of the secret is persisted, so the
 // plaintext value is not recoverable after this function returns.
 //
-// The function uses the migration user (typically aicoopdb_owner, or
+// The function uses the migration user (typically agentcoopdb_owner, or
 // the managed-PG superuser in the external-PG profile) to insert into
-// aicoopdb.workspaces and aicoopdb.api_keys. The workspace is created
+// agentcoopdb.workspaces and agentcoopdb.api_keys. The workspace is created
 // if it does not yet exist.
 //
 // pgRole must already exist as a Postgres role and the gateway login
@@ -84,13 +84,13 @@ func MintKey(
 	// has only a non-unique index — there's no constraint to conflict on.
 	var wsID uuid.UUID
 	err = tx.QueryRow(ctx,
-		`SELECT id FROM aicoopdb.workspaces WHERE name = $1`,
+		`SELECT id FROM agentcoopdb.workspaces WHERE name = $1`,
 		workspace,
 	).Scan(&wsID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		wsID = uuid.New()
 		if _, err = tx.Exec(ctx,
-			`INSERT INTO aicoopdb.workspaces (id, name) VALUES ($1, $2)`,
+			`INSERT INTO agentcoopdb.workspaces (id, name) VALUES ($1, $2)`,
 			wsID, workspace,
 		); err != nil {
 			return "", fmt.Errorf("create workspace: %w", err)
@@ -101,7 +101,7 @@ func MintKey(
 
 	keyPK := uuid.New()
 	if _, err = tx.Exec(ctx,
-		`INSERT INTO aicoopdb.api_keys
+		`INSERT INTO agentcoopdb.api_keys
 		    (id, workspace_id, key_id, secret_hash, env, pg_role, name)
 		 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
 		keyPK, wsID, keyID, hash, string(env), pgRole, "mint-key",

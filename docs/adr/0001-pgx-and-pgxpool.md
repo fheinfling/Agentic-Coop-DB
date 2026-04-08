@@ -20,7 +20,7 @@ and uses `pgxpool` for connection pooling.
 ## Tradeoffs
 
 - We give up cross-driver portability (`lib/pq`, `mysql`). That is fine —
-  AI Coop DB is Postgres-only by design.
+  Agentic Coop DB is Postgres-only by design.
 - pgx's API surface is bigger than `database/sql`. We hide that behind
   `internal/db` so the rest of the codebase only sees a small set of
   helpers (`OpenPool`, `InTx`).

@@ -1,13 +1,13 @@
-"""aicoopdb — top-level CLI.
+"""agentcoopdb — top-level CLI.
 
 Subcommands:
 
-    ai-coop-db init       interactive onboarding wizard (start the stack, mint a key)
-    ai-coop-db sql        run a one-shot SQL statement
-    ai-coop-db me         show the calling key's workspace + role
-    ai-coop-db key        manage API keys (create, rotate)
-    ai-coop-db queue      inspect / flush the local offline retry queue
-    ai-coop-db doctor     verify that everything is wired correctly
+    agentic-coop-db init       interactive onboarding wizard (start the stack, mint a key)
+    agentic-coop-db sql        run a one-shot SQL statement
+    agentic-coop-db me         show the calling key's workspace + role
+    agentic-coop-db key        manage API keys (create, rotate)
+    agentic-coop-db queue      inspect / flush the local offline retry queue
+    agentic-coop-db doctor     verify that everything is wired correctly
 """
 
 from __future__ import annotations
@@ -17,16 +17,16 @@ from typing import Any
 
 import typer
 
-from aicoopdb import connect
-from aicoopdb.cli import config as cli_config
-from aicoopdb.cli.doctor import doctor as doctor_cmd
-from aicoopdb.cli.init import init as init_cmd
-from aicoopdb.cli.key import key_app
-from aicoopdb.cli.queue import queue_app
+from agentcoopdb import connect
+from agentcoopdb.cli import config as cli_config
+from agentcoopdb.cli.doctor import doctor as doctor_cmd
+from agentcoopdb.cli.init import init as init_cmd
+from agentcoopdb.cli.key import key_app
+from agentcoopdb.cli.queue import queue_app
 
 app = typer.Typer(
-    name="aicoopdb",
-    help="AI Coop DB CLI — auth gateway client for shared PostgreSQL.",
+    name="agentcoopdb",
+    help="Agentic Coop DB CLI — auth gateway client for shared PostgreSQL.",
     no_args_is_help=True,
 )
 
@@ -71,7 +71,7 @@ def sql(
 def _require_config() -> cli_config.CLIConfig:
     cfg = cli_config.load()
     if cfg is None:
-        typer.echo("no config found — run `ai-coop-db init` first", err=True)
+        typer.echo("no config found — run `agentic-coop-db init` first", err=True)
         raise typer.Exit(code=2)
     return cfg
 

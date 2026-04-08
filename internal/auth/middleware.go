@@ -138,7 +138,7 @@ func (m *Middleware) RevokeFromCache(keyDBID string) {
 // writeAuthError writes a small RFC7807-shaped JSON error to w.
 func writeAuthError(w http.ResponseWriter, status int, code, detail string) {
 	w.Header().Set("Content-Type", "application/problem+json")
-	w.Header().Set("WWW-Authenticate", `Bearer realm="aicoopdb"`)
+	w.Header().Set("WWW-Authenticate", `Bearer realm="agentcoopdb"`)
 	w.WriteHeader(status)
 	_, _ = w.Write([]byte(
 		`{"type":"about:blank","title":"` + code + `","status":` + itoa(status) + `,"detail":"` + detail + `"}`,

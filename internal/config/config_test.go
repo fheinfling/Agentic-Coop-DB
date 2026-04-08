@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-// Helper that wipes every AICOOPDB_* var so a Load() call sees a known
+// Helper that wipes every AGENTCOOPDB_* var so a Load() call sees a known
 // empty environment, then restores the original values when done.
-func clearAICOOPDBEnv(t *testing.T) {
+func clearAGENTCOOPDBEnv(t *testing.T) {
 	t.Helper()
 	for _, kv := range os.Environ() {
 		if eq := strings.IndexByte(kv, '='); eq > 0 {
 			k := kv[:eq]
-			if strings.HasPrefix(k, "AICOOPDB_") {
+			if strings.HasPrefix(k, "AGENTCOOPDB_") {
 				t.Setenv(k, "")
 			}
 		}
@@ -23,15 +23,15 @@ func clearAICOOPDBEnv(t *testing.T) {
 }
 
 func TestLoad_RequiresDatabaseURL(t *testing.T) {
-	clearAICOOPDBEnv(t)
+	clearAGENTCOOPDBEnv(t)
 	if _, err := Load(); err == nil {
-		t.Fatal("Load() with no AICOOPDB_DATABASE_URL: expected error, got nil")
+		t.Fatal("Load() with no AGENTCOOPDB_DATABASE_URL: expected error, got nil")
 	}
 }
 
 func TestLoad_DefaultsAndOverrides(t *testing.T) {
-	clearAICOOPDBEnv(t)
-	t.Setenv("AICOOPDB_DATABASE_URL", "postgres://aicoopdb_gateway@localhost/aicoopdb?sslmode=disable")
+	clearAGENTCOOPDBEnv(t)
+	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@localhost/agentcoopdb?sslmode=disable")
 
 	cfg, err := Load()
 	if err != nil {
@@ -59,9 +59,9 @@ func TestLoad_DefaultsAndOverrides(t *testing.T) {
 }
 
 func TestLoad_MigrationsURLDistinctFromDatabaseURL(t *testing.T) {
-	clearAICOOPDBEnv(t)
-	t.Setenv("AICOOPDB_DATABASE_URL", "postgres://aicoopdb_gateway@host/db")
-	t.Setenv("AICOOPDB_MIGRATIONS_DATABASE_URL", "postgres://aicoopdb_owner@host/db")
+	clearAGENTCOOPDBEnv(t)
+	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@host/db")
+	t.Setenv("AGENTCOOPDB_MIGRATIONS_DATABASE_URL", "postgres://agentcoopdb_owner@host/db")
 
 	cfg, err := Load()
 	if err != nil {
@@ -70,41 +70,41 @@ func TestLoad_MigrationsURLDistinctFromDatabaseURL(t *testing.T) {
 	if cfg.DatabaseURL == cfg.MigrationsDatabaseURL {
 		t.Errorf("DatabaseURL and MigrationsDatabaseURL must remain distinct when both are set")
 	}
-	if !strings.Contains(cfg.MigrationsDatabaseURL, "aicoopdb_owner") {
+	if !strings.Contains(cfg.MigrationsDatabaseURL, "agentcoopdb_owner") {
 		t.Errorf("MigrationsDatabaseURL: got %q", cfg.MigrationsDatabaseURL)
 	}
 }
 
 func TestLoad_RejectsStatementTimeoutAbove60s(t *testing.T) {
-	clearAICOOPDBEnv(t)
-	t.Setenv("AICOOPDB_DATABASE_URL", "postgres://aicoopdb_gateway@host/db")
-	t.Setenv("AICOOPDB_STATEMENT_TIMEOUT", "61s")
+	clearAGENTCOOPDBEnv(t)
+	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@host/db")
+	t.Setenv("AGENTCOOPDB_STATEMENT_TIMEOUT", "61s")
 	if _, err := Load(); err == nil {
 		t.Fatal("Load with statement_timeout=61s: expected error, got nil")
 	}
 }
 
 func TestLoad_RejectsHardLimitBelowDefaultLimit(t *testing.T) {
-	clearAICOOPDBEnv(t)
-	t.Setenv("AICOOPDB_DATABASE_URL", "postgres://aicoopdb_gateway@host/db")
-	t.Setenv("AICOOPDB_DEFAULT_SELECT_LIMIT", "1000")
-	t.Setenv("AICOOPDB_HARD_SELECT_LIMIT", "500")
+	clearAGENTCOOPDBEnv(t)
+	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@host/db")
+	t.Setenv("AGENTCOOPDB_DEFAULT_SELECT_LIMIT", "1000")
+	t.Setenv("AGENTCOOPDB_HARD_SELECT_LIMIT", "500")
 	if _, err := Load(); err == nil {
 		t.Fatal("Load with HARD_SELECT_LIMIT < DEFAULT_SELECT_LIMIT: expected error, got nil")
 	}
 }
 
 func TestLoad_RejectsZeroMaxStatementParams(t *testing.T) {
-	clearAICOOPDBEnv(t)
-	t.Setenv("AICOOPDB_DATABASE_URL", "postgres://aicoopdb_gateway@host/db")
-	t.Setenv("AICOOPDB_MAX_STATEMENT_PARAMS", "0")
+	clearAGENTCOOPDBEnv(t)
+	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@host/db")
+	t.Setenv("AGENTCOOPDB_MAX_STATEMENT_PARAMS", "0")
 	if _, err := Load(); err == nil {
 		t.Fatal("Load with MAX_STATEMENT_PARAMS=0: expected error, got nil")
 	}
 }
 
 func TestLoad_OwnerPasswordFromFile(t *testing.T) {
-	clearAICOOPDBEnv(t)
+	clearAGENTCOOPDBEnv(t)
 
 	dir := t.TempDir()
 	pwFile := filepath.Join(dir, "owner_password.txt")
@@ -112,8 +112,8 @@ func TestLoad_OwnerPasswordFromFile(t *testing.T) {
 		t.Fatalf("write file: %v", err)
 	}
 
-	t.Setenv("AICOOPDB_DATABASE_URL", "postgres://aicoopdb_gateway@host/db")
-	t.Setenv("AICOOPDB_OWNER_PASSWORD_FILE", pwFile)
+	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@host/db")
+	t.Setenv("AGENTCOOPDB_OWNER_PASSWORD_FILE", pwFile)
 
 	cfg, err := Load()
 	if err != nil {
@@ -125,7 +125,7 @@ func TestLoad_OwnerPasswordFromFile(t *testing.T) {
 }
 
 func TestLoad_DirectPasswordWinsOverFile(t *testing.T) {
-	clearAICOOPDBEnv(t)
+	clearAGENTCOOPDBEnv(t)
 
 	dir := t.TempDir()
 	pwFile := filepath.Join(dir, "owner.txt")
@@ -133,9 +133,9 @@ func TestLoad_DirectPasswordWinsOverFile(t *testing.T) {
 		t.Fatalf("write file: %v", err)
 	}
 
-	t.Setenv("AICOOPDB_DATABASE_URL", "postgres://aicoopdb_gateway@host/db")
-	t.Setenv("AICOOPDB_OWNER_PASSWORD", "from-env")
-	t.Setenv("AICOOPDB_OWNER_PASSWORD_FILE", pwFile)
+	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@host/db")
+	t.Setenv("AGENTCOOPDB_OWNER_PASSWORD", "from-env")
+	t.Setenv("AGENTCOOPDB_OWNER_PASSWORD_FILE", pwFile)
 
 	cfg, err := Load()
 	if err != nil {
@@ -150,7 +150,7 @@ func TestLoad_GatewayPasswordFromFile(t *testing.T) {
 	// Symmetric with the owner test — both secrets share the same
 	// loadSecretFromFile path, so this is mostly a sanity check that
 	// the wiring is in place for both.
-	clearAICOOPDBEnv(t)
+	clearAGENTCOOPDBEnv(t)
 
 	dir := t.TempDir()
 	pwFile := filepath.Join(dir, "gw.txt")
@@ -158,8 +158,8 @@ func TestLoad_GatewayPasswordFromFile(t *testing.T) {
 		t.Fatalf("write file: %v", err)
 	}
 
-	t.Setenv("AICOOPDB_DATABASE_URL", "postgres://aicoopdb_gateway@host/db")
-	t.Setenv("AICOOPDB_GATEWAY_PASSWORD_FILE", pwFile)
+	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@host/db")
+	t.Setenv("AGENTCOOPDB_GATEWAY_PASSWORD_FILE", pwFile)
 
 	cfg, err := Load()
 	if err != nil {
@@ -171,9 +171,9 @@ func TestLoad_GatewayPasswordFromFile(t *testing.T) {
 }
 
 func TestLoad_PasswordFileMissingFails(t *testing.T) {
-	clearAICOOPDBEnv(t)
-	t.Setenv("AICOOPDB_DATABASE_URL", "postgres://aicoopdb_gateway@host/db")
-	t.Setenv("AICOOPDB_OWNER_PASSWORD_FILE", "/this/path/definitely/does/not/exist")
+	clearAGENTCOOPDBEnv(t)
+	t.Setenv("AGENTCOOPDB_DATABASE_URL", "postgres://agentcoopdb_gateway@host/db")
+	t.Setenv("AGENTCOOPDB_OWNER_PASSWORD_FILE", "/this/path/definitely/does/not/exist")
 	if _, err := Load(); err == nil {
 		t.Fatal("Load with missing OWNER_PASSWORD_FILE: expected error, got nil")
 	}
@@ -189,8 +189,8 @@ func TestUsage_RendersNonEmpty(t *testing.T) {
 	if got == "" {
 		t.Fatal("Usage() returned empty string")
 	}
-	if !strings.Contains(got, "AICOOPDB_") {
-		t.Errorf("Usage() output should contain AICOOPDB_ env var names; got:\n%s", got)
+	if !strings.Contains(got, "AGENTCOOPDB_") {
+		t.Errorf("Usage() output should contain AGENTCOOPDB_ env var names; got:\n%s", got)
 	}
 	if strings.Contains(got, "failed to render usage") {
 		t.Errorf("Usage() returned the error placeholder: %q", got)

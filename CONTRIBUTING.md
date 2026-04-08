@@ -1,6 +1,6 @@
-# Contributing to AI Coop DB
+# Contributing to Agentic Coop DB
 
-Thanks for considering a contribution. AI Coop DB is intentionally small, so the
+Thanks for considering a contribution. Agentic Coop DB is intentionally small, so the
 fastest way to get a PR landed is to start with a `good-first-issue` from the
 issue tracker or pick a `proposed`/`accepted` feature from
 [`docs/features/`](docs/features/).
@@ -34,8 +34,8 @@ You need:
 - Make
 
 ```bash
-git clone https://github.com/fheinfling/ai-coop-db.git
-cd ai-coop-db
+git clone https://github.com/fheinfling/agentic-coop-db.git
+cd agentic-coop-db
 make build              # go build ./... + python -m build
 make test-unit          # fast unit tests
 make up-local           # bring up postgres + api on localhost:8080

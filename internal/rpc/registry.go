@@ -103,7 +103,7 @@ func LoadBuiltins(reg *Registry) error {
 }
 
 func bodiesRoot() (string, error) {
-	if d := os.Getenv("AICOOPDB_RPC_DIR"); d != "" {
+	if d := os.Getenv("AGENTCOOPDB_RPC_DIR"); d != "" {
 		return d, nil
 	}
 	for _, c := range []string{"/app/sql/rpc", "sql/rpc"} {

@@ -3,14 +3,14 @@ requires = ["hatchling>=1.25"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ai-coop-db"
+name = "agentic-coop-db"
 version = "0.1.0"
 description = "Auth gateway client for shared PostgreSQL — sends parameterised SQL over HTTPS."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [
-    { name = "The AI Coop DB Authors" }
+    { name = "The Agentic Coop DB Authors" }
 ]
 keywords = ["postgres", "postgresql", "auth", "gateway", "pgvector", "sdk"]
 classifiers = [
@@ -42,15 +42,15 @@ dev = [
 ]
 
 [project.scripts]
-ai-coop-db = "aicoopdb.cli.main:app"
+agentic-coop-db = "agentcoopdb.cli.main:app"
 
 [project.urls]
-Homepage = "https://github.com/fheinfling/ai-coop-db"
-Source = "https://github.com/fheinfling/ai-coop-db"
-Issues = "https://github.com/fheinfling/ai-coop-db/issues"
+Homepage = "https://github.com/fheinfling/agentic-coop-db"
+Source = "https://github.com/fheinfling/agentic-coop-db"
+Issues = "https://github.com/fheinfling/agentic-coop-db/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/aicoopdb"]
+packages = ["src/agentcoopdb"]
 
 [tool.hatch.build.targets.sdist]
 include = ["src", "README.md", "tests"]
@@ -69,7 +69,7 @@ ignore = ["E501"]
 # known false positive for these libraries; suppress only on the CLI
 # entrypoint module.
 [tool.ruff.lint.per-file-ignores]
-"src/aicoopdb/cli/main.py" = ["B008"]
+"src/agentcoopdb/cli/main.py" = ["B008"]
 
 [tool.mypy]
 python_version = "3.11"

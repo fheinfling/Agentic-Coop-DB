@@ -2,7 +2,7 @@
 
 When the gateway is unreachable, calling .execute() on a write raises
 NetworkError unless the caller has wrapped the client with `enable_queue()`.
-With the queue enabled, writes are persisted to ~/.ai-coop-db/queue.db and
+With the queue enabled, writes are persisted to ~/.agentic-coop-db/queue.db and
 replayed on the next successful flush.
 
 Reads are NEVER queued — they would silently return stale data. The caller
@@ -14,7 +14,7 @@ The queue is intentionally tiny:
   * FIFO replay with exponential backoff
 
 The queue is single-process: there is no advisory locking. If you need
-multi-process replay, use a single sidecar process to run `ai-coop-db queue flush`.
+multi-process replay, use a single sidecar process to run `agentic-coop-db queue flush`.
 """
 
 from __future__ import annotations
@@ -28,8 +28,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from aicoopdb.errors import AICoopDBError, NetworkError, QueueFullError
-from aicoopdb.retry import backoff
+from agentcoopdb.errors import AICoopDBError, NetworkError, QueueFullError
+from agentcoopdb.retry import backoff
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS pending (

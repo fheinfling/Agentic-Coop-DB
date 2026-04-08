@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/fheinfling/ai-coop-db/internal/httpapi"
-	sqlpkg "github.com/fheinfling/ai-coop-db/internal/sql"
+	"github.com/fheinfling/agentic-coop-db/internal/httpapi"
+	sqlpkg "github.com/fheinfling/agentic-coop-db/internal/sql"
 )
 
 func TestMapError_Nil(t *testing.T) {

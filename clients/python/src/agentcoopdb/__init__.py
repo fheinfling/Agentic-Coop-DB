@@ -1,8 +1,8 @@
-"""aicoopdb — Python client for the AI Coop DB auth gateway.
+"""agentcoopdb — Python client for the Agentic Coop DB auth gateway.
 
 This package is intentionally tiny. The public surface is:
 
-    from aicoopdb import connect
+    from agentcoopdb import connect
     db = connect("https://db.example.com", api_key="acd_live_...")
     db.execute(sql, params)
     db.select(sql, params)
@@ -16,8 +16,8 @@ This package is intentionally tiny. The public surface is:
 Plus error classes (errors.py) and the offline retry queue (queue.py).
 """
 
-from aicoopdb.client import AICoopDBClient, connect
-from aicoopdb.errors import (
+from agentcoopdb.client import AICoopDBClient, connect
+from agentcoopdb.errors import (
     AICoopDBError,
     AuthError,
     IdempotencyConflict,

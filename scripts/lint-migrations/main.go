@@ -34,7 +34,7 @@ var (
 
 // controlPlaneTables lists tables that the linter must NOT require RLS
 // on, even though they have a workspace_id column. They live in the
-// `aicoopdb` schema (moved by migration 0007) and are unreachable from
+// `agentcoopdb` schema (moved by migration 0007) and are unreachable from
 // any API key role at all — schema-level isolation supersedes RLS for
 // these. RLS would be redundant defense against a threat model that
 // doesn't apply, and the migrations linter shouldn't enforce it.
@@ -112,7 +112,7 @@ func lintFile(path, body string) []string {
 			continue
 		}
 		// Skip other control-plane tables (api_keys, audit_logs, …).
-		// They live in the aicoopdb schema after migration 0007 and are
+		// They live in the agentcoopdb schema after migration 0007 and are
 		// unreachable from any API key role, so RLS is unnecessary.
 		if controlPlaneTables[table] {
 			continue

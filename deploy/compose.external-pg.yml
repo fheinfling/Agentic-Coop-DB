@@ -20,34 +20,34 @@
 #
 # ---- Required environment variables ----------------------------------------
 #
-#   AICOOPDB_DB_HOST           Internal hostname of the postgres service.
+#   AGENTCOOPDB_DB_HOST           Internal hostname of the postgres service.
 #                              For Coolify-managed PG this is the random
 #                              "Internal Hostname" string Coolify shows
 #                              (e.g. ihxytlahfwp273cze0tjf3tu). For other
 #                              platforms, whatever DNS name resolves from
 #                              inside the api container's network.
 #
-#   AICOOPDB_DB_NAME           Name of the database to use. If your
+#   AGENTCOOPDB_DB_NAME           Name of the database to use. If your
 #                              managed PG only exposes a default `postgres`
 #                              db, that's fine — set it to `postgres`.
-#                              Otherwise create a dedicated `aicoopdb` db.
+#                              Otherwise create a dedicated `agentcoopdb` db.
 #
-#   AICOOPDB_DB_SUPERUSER      Username of a role that can CREATE ROLE
+#   AGENTCOOPDB_DB_SUPERUSER      Username of a role that can CREATE ROLE
 #                              and ALTER ROLE. The boot sequence uses it
 #                              to run migration 0004 (which creates the
-#                              aicoopdb_gateway / dbadmin / dbuser roles)
-#                              and to set the password on aicoopdb_gateway.
+#                              agentcoopdb_gateway / dbadmin / dbuser roles)
+#                              and to set the password on agentcoopdb_gateway.
 #                              For Coolify, this is `postgres`. For RDS,
 #                              the master user. The api never opens a
 #                              connection as this role at request time.
 #
-#   AICOOPDB_OWNER_PASSWORD    Password for AICOOPDB_DB_SUPERUSER. (The
+#   AGENTCOOPDB_OWNER_PASSWORD    Password for AGENTCOOPDB_DB_SUPERUSER. (The
 #                              env var is named OWNER for symmetry with
-#                              the in-stack `aicoopdb_owner` role used by
+#                              the in-stack `agentcoopdb_owner` role used by
 #                              compose.cloud.yml — same code path, just
 #                              a different actual user.)
 #
-#   AICOOPDB_GATEWAY_PASSWORD  Password to set on the aicoopdb_gateway
+#   AGENTCOOPDB_GATEWAY_PASSWORD  Password to set on the agentcoopdb_gateway
 #                              role at first boot. Generate fresh:
 #                                head -c 32 /dev/urandom | base64
 #                              Treat as a secret. Subsequent deploys
@@ -59,8 +59,8 @@
 #
 # ---- Optional environment variables ----------------------------------------
 #
-#   AICOOPDB_DB_PORT           default: 5432
-#   AICOOPDB_DB_SSLMODE        default: require
+#   AGENTCOOPDB_DB_PORT           default: 5432
+#   AGENTCOOPDB_DB_SSLMODE        default: require
 #                              Use `disable` only if both services live on
 #                              the same internal network without TLS.
 #
@@ -84,12 +84,12 @@
 #
 # ---- Boot sequence (what happens on first deploy) --------------------------
 #
-#   a. /app/ai-coop-db-server starts, reads AICOOPDB_* env.
+#   a. /app/agentic-coop-db-server starts, reads AGENTCOOPDB_* env.
 #   b. Connects to MIGRATIONS_DATABASE_URL as the superuser, runs all
 #      pending migrations idempotently. Migration 0004 creates the role
 #      hierarchy; 0005 enables pgvector; 0007 splits the control plane.
-#   c. Runs ALTER ROLE aicoopdb_gateway WITH PASSWORD '<gateway pw>'.
-#   d. Opens the gateway pool as `aicoopdb_gateway` (not the superuser)
+#   c. Runs ALTER ROLE agentcoopdb_gateway WITH PASSWORD '<gateway pw>'.
+#   d. Opens the gateway pool as `agentcoopdb_gateway` (not the superuser)
 #      and starts serving on :8080.
 #
 # Subsequent deploys re-run (b)–(d). All steps are idempotent.
@@ -109,10 +109,10 @@ services:
   api:
     # We both pin the published image AND declare a build context. Coolify
     # (and `docker compose build`) will use the build context, producing a
-    # local image tagged ai-coop-db-server:dev. If you'd rather pull from
+    # local image tagged agentic-coop-db-server:dev. If you'd rather pull from
     # ghcr instead of building per-deploy, comment out the `build:` block —
     # Coolify will then `docker pull` the image: tag.
-    image: ai-coop-db-server:dev
+    image: agentic-coop-db-server:dev
     build:
       context: ..
       dockerfile: Dockerfile
@@ -123,41 +123,41 @@ services:
     expose:
       - "8080"
     environment:
-      AICOOPDB_HTTP_ADDR: ":8080"
+      AGENTCOOPDB_HTTP_ADDR: ":8080"
       # The host platform terminates TLS in front of us, so the gateway
       # itself speaks plaintext on the docker network. INSECURE_HTTP=1
       # opts in to plaintext on a non-localhost bind.
-      AICOOPDB_INSECURE_HTTP: "true"
+      AGENTCOOPDB_INSECURE_HTTP: "true"
 
-      AICOOPDB_LOG_FORMAT: "json"
-      AICOOPDB_LOG_LEVEL: "info"
-      AICOOPDB_METRICS_ENABLED: "true"
+      AGENTCOOPDB_LOG_FORMAT: "json"
+      AGENTCOOPDB_LOG_LEVEL: "info"
+      AGENTCOOPDB_METRICS_ENABLED: "true"
 
       # Runtime gateway pool: connects as the unprivileged
-      # `aicoopdb_gateway` role created by migration 0004. The password
-      # is injected from AICOOPDB_GATEWAY_PASSWORD into the pool config —
+      # `agentcoopdb_gateway` role created by migration 0004. The password
+      # is injected from AGENTCOOPDB_GATEWAY_PASSWORD into the pool config —
       # we deliberately do NOT bake it into the URL string so logs stay
       # grep-friendly.
-      AICOOPDB_DATABASE_URL: "postgres://aicoopdb_gateway@${AICOOPDB_DB_HOST}:${AICOOPDB_DB_PORT:-5432}/${AICOOPDB_DB_NAME}?sslmode=${AICOOPDB_DB_SSLMODE:-require}"
+      AGENTCOOPDB_DATABASE_URL: "postgres://agentcoopdb_gateway@${AGENTCOOPDB_DB_HOST}:${AGENTCOOPDB_DB_PORT:-5432}/${AGENTCOOPDB_DB_NAME}?sslmode=${AGENTCOOPDB_DB_SSLMODE:-require}"
 
       # Migrations connection: runs as the database superuser so that
       # migration 0004 can CREATE ROLE and the boot sequence can ALTER
-      # ROLE aicoopdb_gateway WITH PASSWORD.
-      AICOOPDB_MIGRATIONS_DATABASE_URL: "postgres://${AICOOPDB_DB_SUPERUSER:-postgres}@${AICOOPDB_DB_HOST}:${AICOOPDB_DB_PORT:-5432}/${AICOOPDB_DB_NAME}?sslmode=${AICOOPDB_DB_SSLMODE:-require}"
+      # ROLE agentcoopdb_gateway WITH PASSWORD.
+      AGENTCOOPDB_MIGRATIONS_DATABASE_URL: "postgres://${AGENTCOOPDB_DB_SUPERUSER:-postgres}@${AGENTCOOPDB_DB_HOST}:${AGENTCOOPDB_DB_PORT:-5432}/${AGENTCOOPDB_DB_NAME}?sslmode=${AGENTCOOPDB_DB_SSLMODE:-require}"
 
-      # AICOOPDB_OWNER_PASSWORD is the password for the user named in
+      # AGENTCOOPDB_OWNER_PASSWORD is the password for the user named in
       # MIGRATIONS_DATABASE_URL, regardless of the role's actual name.
       # In this profile that's the managed-PG superuser.
-      AICOOPDB_OWNER_PASSWORD: ${AICOOPDB_OWNER_PASSWORD:?required - superuser password for the migrations connection}
+      AGENTCOOPDB_OWNER_PASSWORD: ${AGENTCOOPDB_OWNER_PASSWORD:?required - superuser password for the migrations connection}
 
-      # AICOOPDB_GATEWAY_PASSWORD is the password the boot sequence will
-      # set on the aicoopdb_gateway role and then use to open the pool.
+      # AGENTCOOPDB_GATEWAY_PASSWORD is the password the boot sequence will
+      # set on the agentcoopdb_gateway role and then use to open the pool.
       # Generate once with `head -c 32 /dev/urandom | base64` and store
       # it as a secret.
-      AICOOPDB_GATEWAY_PASSWORD: ${AICOOPDB_GATEWAY_PASSWORD:?required - random password for the aicoopdb_gateway role}
+      AGENTCOOPDB_GATEWAY_PASSWORD: ${AGENTCOOPDB_GATEWAY_PASSWORD:?required - random password for the agentcoopdb_gateway role}
 
     healthcheck:
-      test: ["CMD", "/app/ai-coop-db-server", "-version"]
+      test: ["CMD", "/app/agentic-coop-db-server", "-version"]
       interval: 10s
       timeout: 3s
       retries: 5

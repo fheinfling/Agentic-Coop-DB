@@ -1,7 +1,7 @@
 // Package config loads runtime configuration from environment variables.
 //
 // Every option is documented inline so that `envconfig.Usage` can render a
-// complete reference (used by `ai-coop-db-server -help-env`). Defaults are
+// complete reference (used by `agentic-coop-db-server -help-env`). Defaults are
 // chosen so that the local profile works with no env vars set at all.
 package config
 
@@ -15,8 +15,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
-// EnvPrefix is the prefix for every AI Coop DB environment variable.
-const EnvPrefix = "AICOOPDB"
+// EnvPrefix is the prefix for every Agentic Coop DB environment variable.
+const EnvPrefix = "AGENTCOOPDB"
 
 // Config is the full runtime configuration tree.
 type Config struct {
@@ -29,29 +29,29 @@ type Config struct {
 	MaxRequestBodyBytes  int64         `envconfig:"MAX_REQUEST_BODY_BYTES" default:"1048576"`
 	MaxResponseBodyBytes int64         `envconfig:"MAX_RESPONSE_BODY_BYTES" default:"8388608"`
 
-	// Plaintext HTTP is allowed only when AICOOPDB_INSECURE_HTTP=1. Any other
+	// Plaintext HTTP is allowed only when AGENTCOOPDB_INSECURE_HTTP=1. Any other
 	// deployment must terminate TLS in front of the gateway.
 	InsecureHTTP bool `envconfig:"INSECURE_HTTP" default:"false"`
 
 	// Database (gateway pool — never connects as superuser)
-	DatabaseURL           string `envconfig:"DATABASE_URL" required:"true" desc:"postgres URL the gateway pool uses (login role: aicoopdb_gateway)"`
-	MigrationsDatabaseURL string `envconfig:"MIGRATIONS_DATABASE_URL" desc:"postgres URL used by cmd/migrate (login role: aicoopdb_owner). defaults to DATABASE_URL"`
-	// GatewayPassword is the password for the aicoopdb_gateway role. When
+	DatabaseURL           string `envconfig:"DATABASE_URL" required:"true" desc:"postgres URL the gateway pool uses (login role: agentcoopdb_gateway)"`
+	MigrationsDatabaseURL string `envconfig:"MIGRATIONS_DATABASE_URL" desc:"postgres URL used by cmd/migrate (login role: agentcoopdb_owner). defaults to DATABASE_URL"`
+	// GatewayPassword is the password for the agentcoopdb_gateway role. When
 	// set, the server runs ALTER ROLE WITH PASSWORD on it after migrations
 	// (so the role gets a password without baking it into a migration file)
 	// and injects it into the gateway pool's connection config. When empty
 	// (the local / pi-lite profiles, where postgres uses
 	// POSTGRES_HOST_AUTH_METHOD=trust), no password is set.
 	//
-	// `*_FILE` variant: AICOOPDB_GATEWAY_PASSWORD_FILE points at a file
-	// (typically /run/secrets/aicoopdb_gateway_password) whose contents are
+	// `*_FILE` variant: AGENTCOOPDB_GATEWAY_PASSWORD_FILE points at a file
+	// (typically /run/secrets/agentcoopdb_gateway_password) whose contents are
 	// used. This is the standard docker / swarm secret-mount pattern.
-	GatewayPassword string `envconfig:"GATEWAY_PASSWORD" desc:"password for the aicoopdb_gateway role; required for cloud / swarm profiles, optional for local trust-auth dev. AICOOPDB_GATEWAY_PASSWORD_FILE is also accepted."`
-	// OwnerPassword is the password for the aicoopdb_owner role. The server
+	GatewayPassword string `envconfig:"GATEWAY_PASSWORD" desc:"password for the agentcoopdb_gateway role; required for cloud / swarm profiles, optional for local trust-auth dev. AGENTCOOPDB_GATEWAY_PASSWORD_FILE is also accepted."`
+	// OwnerPassword is the password for the agentcoopdb_owner role. The server
 	// uses it to (a) embed in the migrations URL when running migrations
 	// and (b) reconnect as the owner to ALTER ROLE the gateway password.
 	// Same `*_FILE` variant applies.
-	OwnerPassword        string        `envconfig:"OWNER_PASSWORD" desc:"password for the aicoopdb_owner role; same dual GATEWAY_PASSWORD vs *_FILE rules"`
+	OwnerPassword        string        `envconfig:"OWNER_PASSWORD" desc:"password for the agentcoopdb_owner role; same dual GATEWAY_PASSWORD vs *_FILE rules"`
 	DatabaseMaxConns     int32         `envconfig:"DATABASE_MAX_CONNS" default:"20"`
 	DatabaseMinConns     int32         `envconfig:"DATABASE_MIN_CONNS" default:"2"`
 	DatabaseConnLifetime time.Duration `envconfig:"DATABASE_CONN_LIFETIME" default:"30m"`
@@ -86,7 +86,7 @@ type Config struct {
 	MigrateOnStart bool `envconfig:"MIGRATE_ON_START" default:"true" desc:"run pending migrations at startup before serving traffic"`
 }
 
-// Load reads AICOOPDB_* env vars into a fresh Config and validates simple
+// Load reads AGENTCOOPDB_* env vars into a fresh Config and validates simple
 // invariants. Anything that depends on cross-field state is checked here so
 // the server fails fast at startup rather than mid-request.
 func Load() (*Config, error) {
@@ -100,12 +100,12 @@ func Load() (*Config, error) {
 	// Resolve `*_FILE` env vars for sensitive secrets. Docker / swarm
 	// mount secrets as files at /run/secrets/<name>; this is how operators
 	// pass them in without putting them in env-block strings.
-	if v, err := loadSecretFromFile("AICOOPDB_GATEWAY_PASSWORD", c.GatewayPassword); err != nil {
+	if v, err := loadSecretFromFile("AGENTCOOPDB_GATEWAY_PASSWORD", c.GatewayPassword); err != nil {
 		return nil, err
 	} else {
 		c.GatewayPassword = v
 	}
-	if v, err := loadSecretFromFile("AICOOPDB_OWNER_PASSWORD", c.OwnerPassword); err != nil {
+	if v, err := loadSecretFromFile("AGENTCOOPDB_OWNER_PASSWORD", c.OwnerPassword); err != nil {
 		return nil, err
 	} else {
 		c.OwnerPassword = v
@@ -122,7 +122,7 @@ func Load() (*Config, error) {
 	return &c, nil
 }
 
-// Usage returns the env var reference (used by `ai-coop-db-server -help-env`).
+// Usage returns the env var reference (used by `agentic-coop-db-server -help-env`).
 //
 // envconfig.Usage writes to os.Stderr and only returns an error, so we use
 // Usagef with an in-memory buffer to capture the rendered text.

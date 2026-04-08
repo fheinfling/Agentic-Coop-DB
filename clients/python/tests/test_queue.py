@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from aicoopdb.errors import NetworkError, ValidationError
-from aicoopdb.queue import Queue, QueueItem
+from agentcoopdb.errors import NetworkError, ValidationError
+from agentcoopdb.queue import Queue, QueueItem
 
 
 @pytest.fixture()
@@ -22,7 +22,7 @@ def test_enqueue_increments_depth(q: Queue) -> None:
 
 
 def test_max_size_raises_queue_full(q: Queue) -> None:
-    from aicoopdb.errors import QueueFullError
+    from agentcoopdb.errors import QueueFullError
 
     for i in range(10):
         q.enqueue("SELECT 1", [], f"k{i}")

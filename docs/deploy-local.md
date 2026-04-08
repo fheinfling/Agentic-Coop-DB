@@ -1,8 +1,8 @@
 # Local development
 
 ```bash
-git clone https://github.com/fheinfling/ai-coop-db.git
-cd ai-coop-db
+git clone https://github.com/fheinfling/agentic-coop-db.git
+cd agentic-coop-db
 make up-local
 ```
 
@@ -34,7 +34,7 @@ make down
 ```
 
 This removes the compose project, including the postgres volume — any data
-in the local stack is gone. Use `docker compose -p aicoopdb stop` if you want
+in the local stack is gone. Use `docker compose -p agentcoopdb stop` if you want
 to keep the volume.
 
 ## Common dev commands

@@ -11,7 +11,7 @@ import time
 from collections.abc import Callable
 from typing import TypeVar
 
-from aicoopdb.errors import AICoopDBError, NetworkError, RateLimited, ServerError
+from agentcoopdb.errors import AICoopDBError, NetworkError, RateLimited, ServerError
 
 T = TypeVar("T")
 

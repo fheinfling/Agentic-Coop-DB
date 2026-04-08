@@ -26,7 +26,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: ai-coop-db-server -version
+      description: agentic-coop-db-server -version
     validations:
       required: true
   - type: dropdown

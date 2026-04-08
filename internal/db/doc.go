@@ -4,10 +4,10 @@
 // Two distinct connection strings are in play:
 //
 //   - DATABASE_URL — used by the gateway pool. Login role is
-//     aicoopdb_gateway, which has no privileges of its own beyond LOGIN.
+//     agentcoopdb_gateway, which has no privileges of its own beyond LOGIN.
 //   - MIGRATIONS_DATABASE_URL — used by cmd/migrate (and the optional
-//     in-process migration runner). Login role is aicoopdb_owner, the
+//     in-process migration runner). Login role is agentcoopdb_owner, the
 //     superuser-equivalent role that owns the schema.
 //
-// The application server NEVER opens a connection as aicoopdb_owner.
+// The application server NEVER opens a connection as agentcoopdb_owner.
 package db

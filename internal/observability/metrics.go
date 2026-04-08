@@ -7,12 +7,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/fheinfling/ai-coop-db/internal/version"
+	"github.com/fheinfling/agentic-coop-db/internal/version"
 )
 
 // Metrics bundles every prometheus instrument the gateway exposes.
 //
-// The naming follows the prometheus convention: aicoopdb_<subsystem>_<name>_<unit>.
+// The naming follows the prometheus convention: agentcoopdb_<subsystem>_<name>_<unit>.
 type Metrics struct {
 	Registry *prometheus.Registry
 
@@ -37,42 +37,42 @@ func NewMetrics(authCacheLen func() int) *Metrics {
 	m := &Metrics{
 		Registry: r,
 		RequestDuration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Name:    "aicoopdb_request_duration_seconds",
+			Name:    "agentcoopdb_request_duration_seconds",
 			Help:    "HTTP request duration in seconds, by route/method/status.",
 			Buckets: prometheus.ExponentialBucketsRange(0.001, 10, 12),
 		}, []string{"route", "method", "status"}),
 		RequestsTotal: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "aicoopdb_requests_total",
+			Name: "agentcoopdb_requests_total",
 			Help: "Total HTTP requests, by route/method/status.",
 		}, []string{"route", "method", "status"}),
 		SQLStatements: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "aicoopdb_sql_statements_total",
+			Name: "agentcoopdb_sql_statements_total",
 			Help: "SQL statements forwarded by the executor, by command tag and SQLSTATE.",
 		}, []string{"command", "sqlstate"}),
 		RPCInvocations: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: "aicoopdb_rpc_invocations_total",
+			Name: "agentcoopdb_rpc_invocations_total",
 			Help: "RPC invocations, by name and status (ok|conflict|error).",
 		}, []string{"name", "status"}),
 		IdempotencyHits: prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "aicoopdb_idempotency_hits_total",
+			Name: "agentcoopdb_idempotency_hits_total",
 			Help: "Idempotency-Key replays served from the server-side cache.",
 		}),
 		IdempotencyMisses: prometheus.NewCounter(prometheus.CounterOpts{
-			Name: "aicoopdb_idempotency_misses_total",
+			Name: "agentcoopdb_idempotency_misses_total",
 			Help: "Idempotency-Key requests that ran for the first time.",
 		}),
 		QueueDepth: prometheus.NewGauge(prometheus.GaugeOpts{
-			Name: "aicoopdb_queue_depth",
+			Name: "agentcoopdb_queue_depth",
 			Help: "Number of pending writes in the SDK retry queue (relayed via the API).",
 		}),
 		BuildInfo: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "aicoopdb_build_info",
+			Name: "agentcoopdb_build_info",
 			Help: "Build identifiers as labels; the value is always 1.",
 		}, []string{"version", "commit", "build_date"}),
 	}
 	m.AuthCacheSize = prometheus.NewGaugeFunc(
 		prometheus.GaugeOpts{
-			Name: "aicoopdb_auth_cache_size",
+			Name: "agentcoopdb_auth_cache_size",
 			Help: "Current entries in the in-memory API key verification cache.",
 		},
 		func() float64 {

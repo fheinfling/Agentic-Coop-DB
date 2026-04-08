@@ -1,4 +1,4 @@
-# AI Coop DB documentation
+# Agentic Coop DB documentation
 
 Start here:
 

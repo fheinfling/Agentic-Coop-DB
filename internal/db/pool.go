@@ -1,7 +1,7 @@
 // Package db owns the pgxpool used by the gateway and the helpers that
 // every other package uses to start a request transaction.
 //
-// The pool's login role is `aicoopdb_gateway`, a low-privilege role that has
+// The pool's login role is `agentcoopdb_gateway`, a low-privilege role that has
 // no privileges of its own beyond LOGIN and membership in dbadmin / dbuser
 // (and any custom roles minted later). Privilege change happens inside the
 // per-request transaction via SET LOCAL ROLE.
@@ -51,7 +51,7 @@ func OpenPool(ctx context.Context, c PoolConfig) (*pgxpool.Pool, error) {
 	if c.ConnLifetime > 0 {
 		cfg.MaxConnLifetime = c.ConnLifetime
 	}
-	cfg.ConnConfig.RuntimeParams["application_name"] = "aicoopdb_gateway"
+	cfg.ConnConfig.RuntimeParams["application_name"] = "agentcoopdb_gateway"
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {

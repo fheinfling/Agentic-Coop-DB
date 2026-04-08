@@ -10,7 +10,7 @@ updated: 2026-04-08
 
 ## Problem
 
-Go applications wanting to use AI Coop DB currently have to build their own
+Go applications wanting to use Agentic Coop DB currently have to build their own
 HTTP client. Most users will copy/paste a snippet that does it wrong (e.g.
 no retry, no idempotency-key handling).
 
@@ -19,7 +19,7 @@ no retry, no idempotency-key handling).
 A `clients/go` package mirroring the Python SDK:
 
 ```go
-db := aicoopdb.Connect(ctx, "https://db.example.com", aicoopdb.WithAPIKey("acd_..."))
+db := agentcoopdb.Connect(ctx, "https://db.example.com", agentcoopdb.WithAPIKey("acd_..."))
 res, err := db.Execute(ctx, "INSERT INTO notes(id, body) VALUES ($1, $2)", id, "hi")
 rows, err := db.Select(ctx, "SELECT * FROM notes WHERE owner = $1", "alice")
 ```
@@ -34,7 +34,7 @@ across SDKs.
 
 ## Acceptance criteria
 
-- `go get github.com/fheinfling/ai-coop-db/clients/go`
+- `go get github.com/fheinfling/agentic-coop-db/clients/go`
 - The Python SDK's test matrix is replicated in Go
 - `clients/go/README.md` matches the surface of `clients/python/README.md`
 

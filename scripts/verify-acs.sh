@@ -7,11 +7,11 @@
 #
 # Usage:
 #   ./scripts/verify-acs.sh                    # against the local stack
-#   AICOOPDB_URL=https://db.example.com ./scripts/verify-acs.sh
+#   AGENTCOOPDB_URL=https://db.example.com ./scripts/verify-acs.sh
 
 set -euo pipefail
 
-URL="${AICOOPDB_URL:-http://localhost:8080}"
+URL="${AGENTCOOPDB_URL:-http://localhost:8080}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 pass() { printf '\033[1;32mAC%-5s PASS\033[0m  %s\n' "$1" "$2"; }
@@ -39,16 +39,16 @@ else
   fail "1.4" "/readyz returned ${ready_status}"
 fi
 
-# Need an admin API key for the rest of the checks. Honour AICOOPDB_API_KEY
+# Need an admin API key for the rest of the checks. Honour AGENTCOOPDB_API_KEY
 # if set, otherwise mint one via gen-key.sh.
-if [[ -z "${AICOOPDB_API_KEY:-}" ]]; then
+if [[ -z "${AGENTCOOPDB_API_KEY:-}" ]]; then
   info "minting an admin key via scripts/gen-key.sh"
-  AICOOPDB_API_KEY="$("${REPO_ROOT}/scripts/gen-key.sh" verify-acs dbadmin 2>&1 | grep -oE 'acd_[a-z]+_[A-Za-z0-9_-]+_[A-Za-z0-9_-]+' | head -1)"
-  if [[ -z "${AICOOPDB_API_KEY}" ]]; then
+  AGENTCOOPDB_API_KEY="$("${REPO_ROOT}/scripts/gen-key.sh" verify-acs dbadmin 2>&1 | grep -oE 'acd_[a-z]+_[A-Za-z0-9_-]+_[A-Za-z0-9_-]+' | head -1)"
+  if [[ -z "${AGENTCOOPDB_API_KEY}" ]]; then
     fail "2.1" "could not mint an admin key"
   fi
 fi
-HDR=(-H "Authorization: Bearer ${AICOOPDB_API_KEY}" -H "Content-Type: application/json")
+HDR=(-H "Authorization: Bearer ${AGENTCOOPDB_API_KEY}" -H "Content-Type: application/json")
 
 # AC2.1 — keys hashed at rest (we cannot read postgres directly here, so we
 # verify the round trip works and trust the migration to set the hash type).
@@ -77,20 +77,20 @@ pass "4.3" "verified by integration test (TestCrossWorkspaceIsolation)"
 status="$(curl -fsS "${HDR[@]}" -X POST "${URL}/v1/sql/execute" -d '{"sql":"SELECT extname FROM pg_extension WHERE extname = $1","params":["vector"]}' | jq -r '.rows | length')"
 [[ "${status}" == "1" ]] && pass "5.1" "pgvector extension installed" || fail "5.1" "pg_extension lookup returned ${status}"
 
-# AC6.3 — `ai-coop-db doctor` (best-effort: only run if the python CLI is on PATH)
-if command -v aicoopdb >/dev/null 2>&1; then
-  if ai-coop-db doctor >/dev/null 2>&1; then
-    pass "6.3" "ai-coop-db doctor exits 0"
+# AC6.3 — `agentic-coop-db doctor` (best-effort: only run if the python CLI is on PATH)
+if command -v agentcoopdb >/dev/null 2>&1; then
+  if agentic-coop-db doctor >/dev/null 2>&1; then
+    pass "6.3" "agentic-coop-db doctor exits 0"
   else
-    fail "6.3" "ai-coop-db doctor failed"
+    fail "6.3" "agentic-coop-db doctor failed"
   fi
 else
-  info "skipping AC6.3 — aicoopdb CLI not on PATH"
+  info "skipping AC6.3 — agentcoopdb CLI not on PATH"
 fi
 
 # AC7.3 — /metrics exposes the headline series
 metrics="$(curl -fsS "${URL}/metrics" || true)"
-echo "${metrics}" | grep -q "aicoopdb_request_duration_seconds" && pass "7.3" "/metrics exposes aicoopdb_request_duration_seconds" || fail "7.3" "/metrics missing aicoopdb_request_duration_seconds"
+echo "${metrics}" | grep -q "agentcoopdb_request_duration_seconds" && pass "7.3" "/metrics exposes agentcoopdb_request_duration_seconds" || fail "7.3" "/metrics missing agentcoopdb_request_duration_seconds"
 
 echo
 info "all checks passed"

@@ -21,19 +21,19 @@ import (
 	"github.com/stretchr/testify/require"
 	tcpg "github.com/testcontainers/testcontainers-go/modules/postgres"
 
-	"github.com/fheinfling/ai-coop-db/internal/audit"
-	"github.com/fheinfling/ai-coop-db/internal/auth"
-	"github.com/fheinfling/ai-coop-db/internal/config"
-	"github.com/fheinfling/ai-coop-db/internal/db"
-	"github.com/fheinfling/ai-coop-db/internal/httpapi"
-	"github.com/fheinfling/ai-coop-db/internal/observability"
-	"github.com/fheinfling/ai-coop-db/internal/rpc"
-	sqlpkg "github.com/fheinfling/ai-coop-db/internal/sql"
+	"github.com/fheinfling/agentic-coop-db/internal/audit"
+	"github.com/fheinfling/agentic-coop-db/internal/auth"
+	"github.com/fheinfling/agentic-coop-db/internal/config"
+	"github.com/fheinfling/agentic-coop-db/internal/db"
+	"github.com/fheinfling/agentic-coop-db/internal/httpapi"
+	"github.com/fheinfling/agentic-coop-db/internal/observability"
+	"github.com/fheinfling/agentic-coop-db/internal/rpc"
+	sqlpkg "github.com/fheinfling/agentic-coop-db/internal/sql"
 )
 
 // repoMigrationsDir returns the absolute path of the repo's migrations
 // directory, found by walking up from this source file until a go.mod
-// is found. Used to set AICOOPDB_MIGRATIONS_DIR before db.RunMigrations
+// is found. Used to set AGENTCOOPDB_MIGRATIONS_DIR before db.RunMigrations
 // runs in tests, since the test binary's CWD is test/integration where
 // no migrations directory exists.
 func repoMigrationsDir(t *testing.T) string {
@@ -79,8 +79,8 @@ func StartHarness(t *testing.T) *Harness {
 	// AND for port 5432/tcp to be reachable on localhost.
 	pgC, err := tcpg.Run(ctx,
 		"pgvector/pgvector:pg16",
-		tcpg.WithDatabase("aicoopdb"),
-		tcpg.WithUsername("aicoopdb_owner"),
+		tcpg.WithDatabase("agentcoopdb"),
+		tcpg.WithUsername("agentcoopdb_owner"),
 		tcpg.WithPassword("test"),
 		tcpg.BasicWaitStrategies(),
 	)
@@ -93,30 +93,30 @@ func StartHarness(t *testing.T) *Harness {
 	// The migrations runner looks for ./migrations relative to CWD by
 	// default, but tests run from test/integration where no such
 	// directory exists. Point it at the repo root explicitly.
-	t.Setenv("AICOOPDB_MIGRATIONS_DIR", repoMigrationsDir(t))
+	t.Setenv("AGENTCOOPDB_MIGRATIONS_DIR", repoMigrationsDir(t))
 
 	// The testcontainers DSN already embeds the postgres password from
 	// tcpg.WithPassword above, so we pass "" as the third arg to leave
 	// the URL alone (injectPassword treats an empty password as a no-op).
 	require.NoError(t, db.RunMigrations(ctx, dsn, ""))
 
-	// In production the gateway pool's role (aicoopdb_gateway) has its
-	// search_path set to "aicoopdb, public" by migration 0007, so bare
-	// table names like `api_keys` resolve to `aicoopdb.api_keys`. In
+	// In production the gateway pool's role (agentcoopdb_gateway) has its
+	// search_path set to "agentcoopdb, public" by migration 0007, so bare
+	// table names like `api_keys` resolve to `agentcoopdb.api_keys`. In
 	// these in-process tests we reuse the migration owner DSN as the
-	// pool DSN (no separate gateway-role bootstrap), and aicoopdb_owner
+	// pool DSN (no separate gateway-role bootstrap), and agentcoopdb_owner
 	// has the default search_path of "$user", public — which does NOT
-	// include aicoopdb. Patch it here so auth.Store and the rest of the
+	// include agentcoopdb. Patch it here so auth.Store and the rest of the
 	// API code can keep using bare table names without test-specific
 	// changes.
 	patchConn, err := pgx.Connect(ctx, dsn)
 	require.NoError(t, err)
-	_, err = patchConn.Exec(ctx, `ALTER ROLE aicoopdb_owner SET search_path TO aicoopdb, public`)
+	_, err = patchConn.Exec(ctx, `ALTER ROLE agentcoopdb_owner SET search_path TO agentcoopdb, public`)
 	require.NoError(t, err)
 	require.NoError(t, patchConn.Close(ctx))
 
 	// Reconnect as the gateway role for the pool. The migrations create
-	// aicoopdb_gateway and grant it dbadmin/dbuser membership.
+	// agentcoopdb_gateway and grant it dbadmin/dbuser membership.
 	gatewayDSN := dsn // testcontainers gives us the owner DSN; for tests we
 	// reuse it because the in-process tests are the only consumer.
 	pool, err := db.OpenPool(ctx, db.PoolConfig{URL: gatewayDSN, MaxConns: 5, MinConns: 1})
@@ -187,15 +187,15 @@ func (h *Harness) MintWorkspaceAndKey(ctx context.Context, name, role string) (w
 	h.T.Helper()
 	wsID := newUUID()
 	// Migration 0007 moved control-plane tables from `public` to the
-	// `aicoopdb` schema. The pool here logs in as aicoopdb_owner whose
+	// `agentcoopdb` schema. The pool here logs in as agentcoopdb_owner whose
 	// default search_path is "$user, public", so we have to qualify
 	// the schema explicitly. Also: workspaces.name has no UNIQUE
 	// constraint so ON CONFLICT (name) won't bind — use a not-exists
 	// guard instead.
 	_, err := h.Pool.Exec(ctx, `
-		INSERT INTO aicoopdb.workspaces (id, name)
+		INSERT INTO agentcoopdb.workspaces (id, name)
 		SELECT $1, $2
-		WHERE NOT EXISTS (SELECT 1 FROM aicoopdb.workspaces WHERE name = $2)
+		WHERE NOT EXISTS (SELECT 1 FROM agentcoopdb.workspaces WHERE name = $2)
 	`, wsID, name)
 	require.NoError(h.T, err)
 	created, err := h.Auth.Create(ctx, auth.CreateKeyInput{

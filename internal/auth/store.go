@@ -122,7 +122,7 @@ func (s *Store) Create(ctx context.Context, in CreateKeyInput) (*CreatedKey, err
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	// Validate that the target role exists and that aicoopdb_gateway is a
+	// Validate that the target role exists and that agentcoopdb_gateway is a
 	// member (recursively). If not, the key would be unusable.
 	var roleOK bool
 	if err := tx.QueryRow(ctx, `
@@ -138,11 +138,11 @@ SELECT EXISTS (
 	}
 	var memberOK bool
 	if err := tx.QueryRow(ctx, `
-SELECT pg_has_role('aicoopdb_gateway', $1, 'USAGE')`, in.PgRole).Scan(&memberOK); err != nil {
+SELECT pg_has_role('agentcoopdb_gateway', $1, 'USAGE')`, in.PgRole).Scan(&memberOK); err != nil {
 		return nil, fmt.Errorf("role membership check: %w", err)
 	}
 	if !memberOK {
-		return nil, fmt.Errorf("aicoopdb_gateway is not a member of %q — run: GRANT %q TO aicoopdb_gateway", in.PgRole, in.PgRole)
+		return nil, fmt.Errorf("agentcoopdb_gateway is not a member of %q — run: GRANT %q TO agentcoopdb_gateway", in.PgRole, in.PgRole)
 	}
 
 	if _, err := tx.Exec(ctx, `

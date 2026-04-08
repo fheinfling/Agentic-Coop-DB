@@ -1,6 +1,6 @@
 # Security model
 
-AI Coop DB forwards arbitrary valid SQL to Postgres. The security story therefore
+Agentic Coop DB forwards arbitrary valid SQL to Postgres. The security story therefore
 has to be airtight: parameterisation, authentication, authorisation, multi-tenant
 isolation, and Postgres-side hardening are five layers of defence, each
 independently sufficient for its threat.
@@ -19,7 +19,7 @@ independently sufficient for its threat.
   field on the wire and never interpolated into the SQL text.
 - **SDK ergonomics push parameterisation.** `db.execute(sql, params)` is
   easier to use than building an f-string. The Python SDK ships with
-  `aicoopdb-lint`, a tiny ast-based linter that flags
+  `agentcoopdb-lint`, a tiny ast-based linter that flags
   `db.execute(f"...{x}...")` patterns.
 
 ## 2. Authentication
@@ -33,18 +33,18 @@ independently sufficient for its threat.
   `<id>` is used for the lookup, the `<secret>` is verified against the
   hash. Comparison is constant-time.
 - **TLS is mandatory** outside of localhost. The server refuses to start
-  with `AICOOPDB_INSECURE_HTTP=1` unless that env var is explicitly set.
+  with `AGENTCOOPDB_INSECURE_HTTP=1` unless that env var is explicitly set.
 
 ## 3. Authorisation (Postgres role grants)
 
 - **Schema split.** The gateway's control-plane (`workspaces`, `api_keys`,
   `audit_logs`, `idempotency_keys`, `rpc_registry`) lives in a dedicated
-  `aicoopdb` schema. `dbadmin` and `dbuser` API keys have **no grants**
+  `agentcoopdb` schema. `dbadmin` and `dbuser` API keys have **no grants**
   on that schema, so a `dbadmin` key cannot `DROP TABLE api_keys` or
   `SELECT FROM audit_logs` even though they own the `public` schema.
   See migration `0007_split_control_plane_schema`.
-- Pool login role: `aicoopdb_gateway`. No privileges of its own beyond
-  CRUD on the `aicoopdb` schema; member of `dbadmin`, `dbuser`, and any
+- Pool login role: `agentcoopdb_gateway`. No privileges of its own beyond
+  CRUD on the `agentcoopdb` schema; member of `dbadmin`, `dbuser`, and any
   custom roles minted later.
 - Every request opens a transaction and runs `SET LOCAL ROLE '<key.role>'`.
   Because `SET LOCAL ROLE` can only target roles the outer role is a member
@@ -54,9 +54,9 @@ independently sufficient for its threat.
   `ALTER SYSTEM`, `COPY ... FROM PROGRAM`, or load arbitrary libraries.
 - `dbuser` is `NOBYPASSRLS` — RLS policies on tenant tables apply
   unconditionally.
-- Migrations run as a separate role `aicoopdb_owner` via a different
+- Migrations run as a separate role `agentcoopdb_owner` via a different
   connection string. **The application server never opens a connection
-  as `aicoopdb_owner`.**
+  as `agentcoopdb_owner`.**
 
 ## 4. Multi-tenant isolation (RLS)
 
@@ -118,6 +118,6 @@ independently sufficient for its threat.
 
 ## Reporting a vulnerability
 
-Use [GitHub Security Advisories](https://github.com/fheinfling/ai-coop-db/security/advisories).
+Use [GitHub Security Advisories](https://github.com/fheinfling/agentic-coop-db/security/advisories).
 **Do not open a public issue.** Critical fixes get a CVE and a patch
 release within 7 days of confirmed report.

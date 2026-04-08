@@ -1,6 +1,6 @@
 -- 0007_split_control_plane_schema.up.sql
 -- Move the gateway's own control-plane tables out of `public` and into a
--- dedicated `aicoopdb` schema that NO API key role can read or write.
+-- dedicated `agentcoopdb` schema that NO API key role can read or write.
 --
 -- Why this exists:
 --
@@ -13,8 +13,8 @@
 --
 -- This migration enforces the right boundary:
 --
---   * `aicoopdb` schema  — owned by aicoopdb_owner; only the gateway role
---                          (aicoopdb_gateway) has CRUD on it. No API key
+--   * `agentcoopdb` schema  — owned by agentcoopdb_owner; only the gateway role
+--                          (agentcoopdb_gateway) has CRUD on it. No API key
 --                          role can touch it.
 --   * `public` schema    — owned by dbadmin; full DDL/DCL allowed for
 --                          dbadmin keys, CRUD for dbuser keys. This is
@@ -24,60 +24,60 @@
 --
 --   - dbadmin keys can DROP TABLE / CREATE TABLE / GRANT / etc. on any
 --     table in `public` (the legitimate use case)
---   - dbadmin keys CANNOT touch aicoopdb.api_keys, aicoopdb.audit_logs, ...
+--   - dbadmin keys CANNOT touch agentcoopdb.api_keys, agentcoopdb.audit_logs, ...
 --     (Postgres returns 42501 permission denied)
 --   - the gateway pool's existing queries (`SELECT FROM api_keys`) keep
 --     working unchanged because the gateway role's search_path is set to
---     `aicoopdb, public` — Postgres resolves bare `api_keys` to
---     `aicoopdb.api_keys` automatically.
+--     `agentcoopdb, public` — Postgres resolves bare `api_keys` to
+--     `agentcoopdb.api_keys` automatically.
 
 BEGIN;
 
-CREATE SCHEMA IF NOT EXISTS aicoopdb AUTHORIZATION aicoopdb_owner;
+CREATE SCHEMA IF NOT EXISTS agentcoopdb AUTHORIZATION agentcoopdb_owner;
 
 -- Move the control-plane tables. SET SCHEMA preserves ownership, indexes,
 -- foreign keys, and existing grants — but we re-grant explicitly below to
 -- be safe.
-ALTER TABLE IF EXISTS public.workspaces       SET SCHEMA aicoopdb;
-ALTER TABLE IF EXISTS public.api_keys         SET SCHEMA aicoopdb;
-ALTER TABLE IF EXISTS public.audit_logs       SET SCHEMA aicoopdb;
-ALTER TABLE IF EXISTS public.idempotency_keys SET SCHEMA aicoopdb;
-ALTER TABLE IF EXISTS public.rpc_registry     SET SCHEMA aicoopdb;
+ALTER TABLE IF EXISTS public.workspaces       SET SCHEMA agentcoopdb;
+ALTER TABLE IF EXISTS public.api_keys         SET SCHEMA agentcoopdb;
+ALTER TABLE IF EXISTS public.audit_logs       SET SCHEMA agentcoopdb;
+ALTER TABLE IF EXISTS public.idempotency_keys SET SCHEMA agentcoopdb;
+ALTER TABLE IF EXISTS public.rpc_registry     SET SCHEMA agentcoopdb;
 
 -- Lock down the new schema. PUBLIC, dbadmin, dbuser get nothing.
-REVOKE ALL ON SCHEMA aicoopdb FROM PUBLIC;
-REVOKE ALL ON SCHEMA aicoopdb FROM dbadmin;
-REVOKE ALL ON SCHEMA aicoopdb FROM dbuser;
+REVOKE ALL ON SCHEMA agentcoopdb FROM PUBLIC;
+REVOKE ALL ON SCHEMA agentcoopdb FROM dbadmin;
+REVOKE ALL ON SCHEMA agentcoopdb FROM dbuser;
 
 -- The gateway role gets exactly what it needs: schema USAGE, CRUD on the
 -- existing tables, USAGE+SELECT on sequences (in case any of these tables
 -- ever uses a serial / identity column).
-GRANT USAGE ON SCHEMA aicoopdb TO aicoopdb_gateway;
+GRANT USAGE ON SCHEMA agentcoopdb TO agentcoopdb_gateway;
 GRANT SELECT, INSERT, UPDATE, DELETE
-    ON ALL TABLES IN SCHEMA aicoopdb
-    TO aicoopdb_gateway;
+    ON ALL TABLES IN SCHEMA agentcoopdb
+    TO agentcoopdb_gateway;
 GRANT USAGE, SELECT
-    ON ALL SEQUENCES IN SCHEMA aicoopdb
-    TO aicoopdb_gateway;
+    ON ALL SEQUENCES IN SCHEMA agentcoopdb
+    TO agentcoopdb_gateway;
 
--- Future tables added by aicoopdb_owner in this schema inherit the same
+-- Future tables added by agentcoopdb_owner in this schema inherit the same
 -- grants automatically — so a new control-plane table doesn't need a
 -- one-off GRANT in its migration.
-ALTER DEFAULT PRIVILEGES FOR ROLE aicoopdb_owner IN SCHEMA aicoopdb
-    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO aicoopdb_gateway;
-ALTER DEFAULT PRIVILEGES FOR ROLE aicoopdb_owner IN SCHEMA aicoopdb
-    GRANT USAGE, SELECT ON SEQUENCES TO aicoopdb_gateway;
+ALTER DEFAULT PRIVILEGES FOR ROLE agentcoopdb_owner IN SCHEMA agentcoopdb
+    GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO agentcoopdb_gateway;
+ALTER DEFAULT PRIVILEGES FOR ROLE agentcoopdb_owner IN SCHEMA agentcoopdb
+    GRANT USAGE, SELECT ON SEQUENCES TO agentcoopdb_gateway;
 
 -- Set search_path on the gateway role so existing Go queries (`FROM api_keys`)
 -- resolve to the new schema without source code changes. Note that the
 -- session search_path is inherited by SET LOCAL ROLE — dbadmin/dbuser will
--- see `aicoopdb` in their path too, but Postgres still denies access at
+-- see `agentcoopdb` in their path too, but Postgres still denies access at
 -- the schema-USAGE level, so the privilege boundary holds.
 --
 -- ALTER ROLE ... SET search_path takes effect on the NEXT connection. The
 -- gateway pool is opened by cmd/server AFTER migrations finish, so the
 -- first request already sees the new search_path.
-ALTER ROLE aicoopdb_gateway SET search_path TO aicoopdb, public;
+ALTER ROLE agentcoopdb_gateway SET search_path TO agentcoopdb, public;
 
 -- dbadmin and dbuser get a `public` search_path so DDL they run lands in
 -- the right place by default.

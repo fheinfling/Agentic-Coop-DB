@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/fheinfling/ai-coop-db/internal/auth"
+	"github.com/fheinfling/agentic-coop-db/internal/auth"
 )
 
 func TestParseBearer_RoundTrip(t *testing.T) {

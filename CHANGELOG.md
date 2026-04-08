@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to AI Coop DB are documented in this file.
+All notable changes to Agentic Coop DB are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,18 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- **Project renamed** from `AIColDB` to `AI Coop DB`. Repository
-  `github.com/fheinfling/ai-coop-db`, Go module
-  `github.com/fheinfling/ai-coop-db`, Python distribution `ai-coop-db`,
-  Python import `aicoopdb`, Postgres roles `aicoopdb_owner` /
-  `aicoopdb_gateway`, env var prefix `AICOOPDB_*`, API key prefix `acd_`.
+- **Project renamed** from `AIColDB` to `Agentic Coop DB`. Repository
+  `github.com/fheinfling/agentic-coop-db`, Go module
+  `github.com/fheinfling/agentic-coop-db`, Python distribution `agentic-coop-db`,
+  Python import `agentcoopdb`, Postgres roles `agentcoopdb_owner` /
+  `agentcoopdb_gateway`, env var prefix `AGENTCOOPDB_*`, API key prefix `acd_`.
 
 ### Security
-- **Control-plane tables split into a dedicated `aicoopdb` schema**
+- **Control-plane tables split into a dedicated `agentcoopdb` schema**
   (migration `0007_split_control_plane_schema`). Previously, `dbadmin`
   API keys could `DROP TABLE api_keys` because the control-plane lived in
-  `public` (which `dbadmin` owns). They now live in `aicoopdb`, which
-  only `aicoopdb_gateway` has CRUD on. `dbadmin` keys can still do any
+  `public` (which `dbadmin` owns). They now live in `agentcoopdb`, which
+  only `agentcoopdb_gateway` has CRUD on. `dbadmin` keys can still do any
   DDL/DCL on user data in `public` — the privilege boundary is enforced
   at the schema level, not by restricting `dbadmin`.
 - **C3** — `internal/sql.Validator` now counts `$N` placeholders by
@@ -30,9 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **C4** — `POST /v1/auth/keys` now rejects requests where
   `workspace_id` differs from the calling key's workspace. A compromised
   `dbadmin` key for tenant A can no longer mint keys for tenant B.
-- **C5** — proper password handling. New `AICOOPDB_GATEWAY_PASSWORD` and
-  `AICOOPDB_OWNER_PASSWORD` env vars (plus the docker `_FILE` variants);
-  the server runs `ALTER ROLE aicoopdb_gateway WITH PASSWORD` after
+- **C5** — proper password handling. New `AGENTCOOPDB_GATEWAY_PASSWORD` and
+  `AGENTCOOPDB_OWNER_PASSWORD` env vars (plus the docker `_FILE` variants);
+  the server runs `ALTER ROLE agentcoopdb_gateway WITH PASSWORD` after
   migrations and injects the password into the pool config. The
   `compose.cloud.yml` profile mounts both as docker secrets. The local /
   pi-lite profiles set `POSTGRES_HOST_AUTH_METHOD=trust` so the dev
@@ -73,14 +73,14 @@ of PostgreSQL 16 + pgvector.
   a CI gate that fails any tenant table without the policy.
 - **Built-in roles** `dbadmin` (DDL/DCL, owner of `public`, `BYPASSRLS`)
   and `dbuser` (CRUD, `NOBYPASSRLS`). Custom roles supported via
-  `ai-coop-db key create --role`.
+  `agentic-coop-db key create --role`.
 - **pgvector** enabled by migration 0005, with `internal/vector` helpers
   and `db.vector_upsert` / `db.vector_search` in the Python SDK.
 - **Optional RPC layer** at `POST /v1/rpc/call` with JSON Schema arg
   validation, server-side idempotency-key replay/conflict, and
   `sql/rpc/upsert_document.sql` as a worked example.
 - **Audit log** (`audit_logs` table) with hashed SQL/params; full capture
-  via `AICOOPDB_AUDIT_INCLUDE_SQL=true`.
+  via `AGENTCOOPDB_AUDIT_INCLUDE_SQL=true`.
 - **Rate limiting** per key via `golang.org/x/time/rate` (60 req/s, burst
   120, configurable). Returns HTTP 429 with `Retry-After`.
 - **Postgres-side hardening**: filesystem escape functions
@@ -91,14 +91,14 @@ of PostgreSQL 16 + pgvector.
 - **Deployment profiles**: `local`, `pi-lite` (Pi 4/5 tuning), `cloud`
   (Caddy auto-TLS + restic backups + postgres-exporter + prometheus),
   and a `stack.swarm.yml` for Docker Swarm with external secrets.
-- **Python SDK** (`pip install ai-coop-db`): `connect`, `execute`, `select`,
+- **Python SDK** (`pip install agentic-coop-db`): `connect`, `execute`, `select`,
   `transaction`, `vector_upsert`, `vector_search`, `rotate_key`, `me`,
   `health`. Typed error taxonomy (`AuthError`, `ValidationError`,
   `IdempotencyConflict`, `RateLimited`, `ServerError`, `NetworkError`,
   `QueueFullError`).
-- **Offline retry queue** (`aicoopdb.queue.Queue`) backed by SQLite, with
+- **Offline retry queue** (`agentcoopdb.queue.Queue`) backed by SQLite, with
   exponential backoff and a dead-letter table.
-- **CLI** (`aicoopdb`): `init` (interactive onboarding wizard), `me`,
+- **CLI** (`agentcoopdb`): `init` (interactive onboarding wizard), `me`,
   `sql`, `key create|rotate`, `queue status|flush|clear-dead`, `doctor`.
 - **Documentation**: architecture, api, security threat model, RLS guide,
   RPC authoring guide, FAQ, deploy guides, ADRs 0000–0006, and a
@@ -107,11 +107,11 @@ of PostgreSQL 16 + pgvector.
 ### Security
 
 - TLS mandatory in any non-localhost deployment (server refuses to start
-  with `AICOOPDB_INSECURE_HTTP=1` unset).
+  with `AGENTCOOPDB_INSECURE_HTTP=1` unset).
 - Container runs as `USER 65532:65532` with read-only root filesystem and
   `cap_drop: [ALL]`.
-- Migrations run as a separate role (`aicoopdb_owner`); the application
-  server pool only ever connects as `aicoopdb_gateway`.
+- Migrations run as a separate role (`agentcoopdb_owner`); the application
+  server pool only ever connects as `agentcoopdb_gateway`.
 
-[Unreleased]: https://github.com/fheinfling/ai-coop-db/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/fheinfling/ai-coop-db/releases/tag/v0.1.0
+[Unreleased]: https://github.com/fheinfling/agentic-coop-db/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/fheinfling/agentic-coop-db/releases/tag/v0.1.0

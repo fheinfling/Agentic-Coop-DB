@@ -1,4 +1,4 @@
-"""`ai-coop-db queue` — inspect / flush the local offline retry queue."""
+"""`agentic-coop-db queue` — inspect / flush the local offline retry queue."""
 
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ from pathlib import Path
 
 import typer
 
-from aicoopdb import connect
-from aicoopdb.cli.config import config_dir
-from aicoopdb.cli.config import load as load_config
-from aicoopdb.queue import Queue, QueueItem
+from agentcoopdb import connect
+from agentcoopdb.cli.config import config_dir
+from agentcoopdb.cli.config import load as load_config
+from agentcoopdb.queue import Queue, QueueItem
 
 queue_app = typer.Typer(no_args_is_help=True)
 
@@ -32,7 +32,7 @@ def flush() -> None:
     """Drain the queue against the configured server."""
     cfg = load_config()
     if cfg is None:
-        typer.echo("no config found — run `ai-coop-db init` first", err=True)
+        typer.echo("no config found — run `agentic-coop-db init` first", err=True)
         raise typer.Exit(code=2)
     db = connect(cfg.base_url, api_key=cfg.api_key)
     q = Queue(queue_path())

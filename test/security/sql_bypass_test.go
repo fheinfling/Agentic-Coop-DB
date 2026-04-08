@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/fheinfling/ai-coop-db/test/integration"
+	"github.com/fheinfling/agentic-coop-db/test/integration"
 )
 
 // TestSQLBypassAttempts walks through the canonical injection / escape

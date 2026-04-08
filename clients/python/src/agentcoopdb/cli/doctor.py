@@ -1,4 +1,4 @@
-"""`ai-coop-db doctor` — verify the local install end to end.
+"""`agentic-coop-db doctor` — verify the local install end to end.
 
 Checks (in order):
 
@@ -23,18 +23,18 @@ from typing import NoReturn
 
 import typer
 
-from aicoopdb import __version__ as sdk_version
-from aicoopdb import connect
-from aicoopdb.cli.config import config_dir
-from aicoopdb.cli.config import load as load_config
-from aicoopdb.errors import AICoopDBError
-from aicoopdb.queue import Queue
+from agentcoopdb import __version__ as sdk_version
+from agentcoopdb import connect
+from agentcoopdb.cli.config import config_dir
+from agentcoopdb.cli.config import load as load_config
+from agentcoopdb.errors import AICoopDBError
+from agentcoopdb.queue import Queue
 
 
 def doctor() -> None:
     cfg = load_config()
     if cfg is None:
-        _fail("config not found — run `ai-coop-db init` first")
+        _fail("config not found — run `agentic-coop-db init` first")
 
     _ok("config", f"loaded from {Path(config_dir()) / 'config.toml'}")
 

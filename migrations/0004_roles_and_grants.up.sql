@@ -3,10 +3,10 @@
 --
 -- Four roles are created:
 --
---   aicoopdb_owner   — superuser-equivalent, used ONLY by cmd/migrate.
+--   agentcoopdb_owner   — superuser-equivalent, used ONLY by cmd/migrate.
 --                     The application server NEVER opens a connection as
 --                     this role. It is what runs DDL during migrations.
---   aicoopdb_gateway — LOGIN role used by the API server pool. No privileges
+--   agentcoopdb_gateway — LOGIN role used by the API server pool. No privileges
 --                     of its own beyond LOGIN; member of the per-key roles.
 --                     SET LOCAL ROLE is the only privilege-change path and
 --                     it is bounded by Postgres' role membership graph.
@@ -19,15 +19,15 @@
 --                     escape RLS.
 --
 -- Filesystem/network escape functions are revoked from PUBLIC and from the
--- aicoopdb_* roles below — even an admin key cannot read host files via SQL.
+-- agentcoopdb_* roles below — even an admin key cannot read host files via SQL.
 
 BEGIN;
 
 -- Skip role creation if a role already exists (idempotent migration).
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'aicoopdb_gateway') THEN
-        CREATE ROLE aicoopdb_gateway LOGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'agentcoopdb_gateway') THEN
+        CREATE ROLE agentcoopdb_gateway LOGIN
             NOCREATEDB NOCREATEROLE NOBYPASSRLS NOREPLICATION;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'dbadmin') THEN
@@ -42,13 +42,13 @@ END$$;
 
 -- The gateway login role is a member of the built-in target roles. New
 -- custom roles created later by a dbadmin key need an explicit
--- `GRANT custom_role TO aicoopdb_gateway` (the aicoopdb CLI does this for
+-- `GRANT custom_role TO agentcoopdb_gateway` (the agentcoopdb CLI does this for
 -- you when minting a key for a custom role).
-GRANT dbadmin TO aicoopdb_gateway;
-GRANT dbuser  TO aicoopdb_gateway;
+GRANT dbadmin TO agentcoopdb_gateway;
+GRANT dbuser  TO agentcoopdb_gateway;
 
 -- dbadmin owns the public schema and can grant on it. (The migration runs
--- as aicoopdb_owner; the ALTER SCHEMA ... OWNER TO is therefore allowed.)
+-- as agentcoopdb_owner; the ALTER SCHEMA ... OWNER TO is therefore allowed.)
 ALTER SCHEMA public OWNER TO dbadmin;
 
 -- Default tenant CRUD privileges. dbadmin owns objects, so this only

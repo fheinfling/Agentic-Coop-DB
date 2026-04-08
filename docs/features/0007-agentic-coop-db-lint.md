@@ -1,5 +1,5 @@
 ---
-name: aicoopdb-lint
+name: agentcoopdb-lint
 description: Lint rule that flags db.execute(f"...{x}...") patterns
 status: accepted
 owner: ""
@@ -16,7 +16,7 @@ intent. The gateway will accept whatever string the caller produces.
 
 ## Proposed solution
 
-A tiny ast-based linter shipped under `clients/python/aicoopdb/lint.py`
+A tiny ast-based linter shipped under `clients/python/agentcoopdb/lint.py`
 that walks Python source and flags:
 
 - `db.execute(f"...")` with non-empty interpolation parts
@@ -24,7 +24,7 @@ that walks Python source and flags:
 - `db.select(...)` with the same patterns
 
 Wired into the project's `.pre-commit-hooks.yaml` so other open-source
-consumers can adopt it. Also exposed as `ai-coop-db lint <path>` for ad-hoc
+consumers can adopt it. Also exposed as `agentic-coop-db lint <path>` for ad-hoc
 runs.
 
 ## Why deferred from v1
@@ -34,6 +34,6 @@ a quality gate, not a security boundary.
 
 ## Acceptance criteria
 
-- `ai-coop-db lint clients/python/tests/` exits 0
+- `agentic-coop-db lint clients/python/tests/` exits 0
 - A purposely-bad fixture file fails with a clear error message
 - Available as a `pre-commit` hook

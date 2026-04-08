@@ -1,4 +1,4 @@
-// Command ai-coop-db-server is the AI Coop DB API server entrypoint.
+// Command agentic-coop-db-server is the Agentic Coop DB API server entrypoint.
 //
 // All wiring lives here; internal/ packages are intentionally not aware of
 // each other beyond the layered dependency direction documented in
@@ -6,9 +6,9 @@
 //
 // Lifecycle:
 //
-//  1. Load config from AICOOPDB_* env vars.
+//  1. Load config from AGENTCOOPDB_* env vars.
 //  2. Build the slog logger and the prometheus registry.
-//  3. Open the pgxpool as the low-privilege login role aicoopdb_gateway.
+//  3. Open the pgxpool as the low-privilege login role agentcoopdb_gateway.
 //  4. Optionally run pending migrations (see internal/db.RunMigrations).
 //  5. Build the http.Handler tree (chi router).
 //  6. Serve until SIGTERM/SIGINT, then drain in-flight requests.
@@ -30,19 +30,19 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"github.com/fheinfling/ai-coop-db/internal/audit"
-	"github.com/fheinfling/ai-coop-db/internal/auth"
-	"github.com/fheinfling/ai-coop-db/internal/config"
-	"github.com/fheinfling/ai-coop-db/internal/db"
-	"github.com/fheinfling/ai-coop-db/internal/httpapi"
-	"github.com/fheinfling/ai-coop-db/internal/observability"
-	"github.com/fheinfling/ai-coop-db/internal/rpc"
-	sqlpkg "github.com/fheinfling/ai-coop-db/internal/sql"
-	"github.com/fheinfling/ai-coop-db/internal/version"
+	"github.com/fheinfling/agentic-coop-db/internal/audit"
+	"github.com/fheinfling/agentic-coop-db/internal/auth"
+	"github.com/fheinfling/agentic-coop-db/internal/config"
+	"github.com/fheinfling/agentic-coop-db/internal/db"
+	"github.com/fheinfling/agentic-coop-db/internal/httpapi"
+	"github.com/fheinfling/agentic-coop-db/internal/observability"
+	"github.com/fheinfling/agentic-coop-db/internal/rpc"
+	sqlpkg "github.com/fheinfling/agentic-coop-db/internal/sql"
+	"github.com/fheinfling/agentic-coop-db/internal/version"
 )
 
 func main() {
-	helpEnv := flag.Bool("help-env", false, "print the AICOOPDB_* env var reference and exit")
+	helpEnv := flag.Bool("help-env", false, "print the AGENTCOOPDB_* env var reference and exit")
 	showVersion := flag.Bool("version", false, "print version info and exit")
 	hashSecret := flag.String("hash-secret", "", "argon2id-hash the given secret and print the PHC string (used by scripts/gen-key.sh)")
 	mintKey := flag.Bool("mint-key", false, "mint a new API key, print it once, and exit (uses the migrations DB connection)")
@@ -53,7 +53,7 @@ func main() {
 
 	if *showVersion {
 		v := version.Get()
-		fmt.Printf("ai-coop-db-server %s (%s) built %s\n", v.Version, v.Commit, v.BuildDate)
+		fmt.Printf("agentic-coop-db-server %s (%s) built %s\n", v.Version, v.Commit, v.BuildDate)
 		return
 	}
 	if *helpEnv {
@@ -84,7 +84,7 @@ func main() {
 }
 
 // runMintKey is the body of the -mint-key subcommand. It loads the same
-// AICOOPDB_* config the server uses (so the migrations URL + owner
+// AGENTCOOPDB_* config the server uses (so the migrations URL + owner
 // password are picked up exactly as in the running container) and then
 // delegates to db.MintKey, printing the resulting bearer token.
 //
@@ -126,7 +126,7 @@ func run() error {
 
 	logger := observability.NewLogger(cfg.LogLevel, cfg.LogFormat)
 	slog.SetDefault(logger)
-	logger.Info("starting ai-coop-db-server",
+	logger.Info("starting agentic-coop-db-server",
 		"version", version.Version,
 		"commit", version.Commit,
 		"build_date", version.BuildDate,
@@ -136,7 +136,7 @@ func run() error {
 	// Refuse to run plaintext HTTP outside of localhost unless the operator
 	// has explicitly opted in.
 	if !cfg.InsecureHTTP && !isLocalAddr(cfg.HTTPAddr) {
-		return errors.New("plaintext HTTP on a non-localhost address requires AICOOPDB_INSECURE_HTTP=1")
+		return errors.New("plaintext HTTP on a non-localhost address requires AGENTCOOPDB_INSECURE_HTTP=1")
 	}
 
 	rootCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -147,12 +147,12 @@ func run() error {
 	// the role exists and (when applicable) has its password set.
 	var migrationsApplied atomic.Bool
 	if cfg.MigrateOnStart {
-		// Migration 0007 references aicoopdb_owner as the schema owner.
+		// Migration 0007 references agentcoopdb_owner as the schema owner.
 		// In bundled-PG profiles the role exists from POSTGRES_USER=
-		// aicoopdb_owner; in the external-PG profile the migration user
+		// agentcoopdb_owner; in the external-PG profile the migration user
 		// is the managed-PG superuser and nothing else creates the role.
 		// EnsureOwnerRole is idempotent — a no-op when the role exists.
-		logger.Info("ensuring aicoopdb_owner role exists")
+		logger.Info("ensuring agentcoopdb_owner role exists")
 		if err := db.EnsureOwnerRole(rootCtx, cfg.MigrationsDatabaseURL, cfg.OwnerPassword); err != nil {
 			return fmt.Errorf("ensure owner role: %w", err)
 		}
@@ -167,15 +167,15 @@ func run() error {
 	// path the cloud / swarm profiles use; local dev uses
 	// POSTGRES_HOST_AUTH_METHOD=trust and leaves it unset.
 	if cfg.GatewayPassword != "" {
-		logger.Info("setting password on aicoopdb_gateway role")
-		if err := db.SetRolePassword(rootCtx, cfg.MigrationsDatabaseURL, cfg.OwnerPassword, "aicoopdb_gateway", cfg.GatewayPassword); err != nil {
+		logger.Info("setting password on agentcoopdb_gateway role")
+		if err := db.SetRolePassword(rootCtx, cfg.MigrationsDatabaseURL, cfg.OwnerPassword, "agentcoopdb_gateway", cfg.GatewayPassword); err != nil {
 			return fmt.Errorf("set gateway password: %w", err)
 		}
 	}
 	migrationsApplied.Store(true)
 
-	// Now open the gateway pool. Login role is aicoopdb_gateway, which has
-	// CRUD on the aicoopdb schema only — see migrations 0004 + 0007.
+	// Now open the gateway pool. Login role is agentcoopdb_gateway, which has
+	// CRUD on the agentcoopdb schema only — see migrations 0004 + 0007.
 	pool, err := db.OpenPool(rootCtx, db.PoolConfig{
 		URL:          cfg.DatabaseURL,
 		Password:     cfg.GatewayPassword,
@@ -311,7 +311,7 @@ func run() error {
 }
 
 // isLocalAddr returns true for ":<port>", "localhost:<port>", "127.0.0.1:<port>",
-// and "[::1]:<port>". Used as part of the AICOOPDB_INSECURE_HTTP gate.
+// and "[::1]:<port>". Used as part of the AGENTCOOPDB_INSECURE_HTTP gate.
 func isLocalAddr(addr string) bool {
 	if addr == "" {
 		return false

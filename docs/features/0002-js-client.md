@@ -16,11 +16,11 @@ would massively reduce the friction for the most common consumer.
 
 ## Proposed solution
 
-A `clients/js` package published as `@aicoopdb/client` on npm. ESM only,
+A `clients/js` package published as `@agentcoopdb/client` on npm. ESM only,
 zero deps, ships TypeScript types out of the box.
 
 ```ts
-import { connect } from "@aicoopdb/client";
+import { connect } from "@agentcoopdb/client";
 const db = connect("https://db.example.com", { apiKey: "acd_..." });
 await db.execute("INSERT INTO notes(id, body) VALUES ($1, $2)", [id, "hi"]);
 const rows = await db.select("SELECT * FROM notes WHERE owner = $1", ["alice"]);
@@ -33,7 +33,7 @@ Python client first. JS is the next priority.
 
 ## Acceptance criteria
 
-- Published to npm as `@aicoopdb/client`
+- Published to npm as `@agentcoopdb/client`
 - TypeScript strict mode passes
 - Works in node 20+ and modern browsers (no polyfills required)
 - README quickstart matches the curl example

@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           # Pinned to a specific patch so govulncheck passes:
           # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           # Pinned to a specific patch so govulncheck passes:
           # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
@@ -62,7 +62,7 @@ jobs:
         os: [ubuntu-24.04, ubuntu-24.04-arm]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           # Pinned to a specific patch so govulncheck passes:
           # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,
@@ -96,7 +96,7 @@ jobs:
     # test process (connection reset by peer on the mapped port).
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           # Pinned to a specific patch so govulncheck passes:
           # 1.25.8 has 3 stdlib vulns in crypto/x509 + crypto/tls,

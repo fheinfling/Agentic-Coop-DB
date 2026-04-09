@@ -36,6 +36,9 @@ func MapError(err error) Problem {
 		return Problem{Title: "ok", Status: 200}
 	}
 
+	if errors.Is(err, sqlpkg.ErrResponseTooLarge) {
+		return Problem{Title: "response_too_large", Status: http.StatusRequestEntityTooLarge, Detail: err.Error()}
+	}
 	var ve *sqlpkg.ValidationError
 	if errors.As(err, &ve) {
 		return Problem{Title: ve.Code, Status: http.StatusBadRequest, Detail: ve.Message}

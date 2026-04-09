@@ -47,21 +47,27 @@ func RequestID(next http.Handler) http.Handler {
 
 // ---- real IP -------------------------------------------------------------------
 
-// RealIP overwrites r.RemoteAddr from X-Real-Ip or X-Forwarded-For when
-// the request comes through a reverse proxy.
-func RealIP(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if rip := r.Header.Get("X-Real-Ip"); rip != "" {
-			r.RemoteAddr = rip
-		} else if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-			if i := strings.IndexByte(fwd, ','); i > 0 {
-				r.RemoteAddr = strings.TrimSpace(fwd[:i])
-			} else {
-				r.RemoteAddr = strings.TrimSpace(fwd)
-			}
+// RealIP returns a middleware that overwrites r.RemoteAddr from X-Real-Ip or
+// X-Forwarded-For. When trustProxy is false the headers are ignored and
+// RemoteAddr is left as-is, preventing spoofed client IPs in audit logs.
+func RealIP(trustProxy bool) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		if !trustProxy {
+			return next
 		}
-		next.ServeHTTP(w, r)
-	})
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if rip := r.Header.Get("X-Real-Ip"); rip != "" {
+				r.RemoteAddr = rip
+			} else if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
+				if i := strings.IndexByte(fwd, ','); i > 0 {
+					r.RemoteAddr = strings.TrimSpace(fwd[:i])
+				} else {
+					r.RemoteAddr = strings.TrimSpace(fwd)
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // ---- recoverer -----------------------------------------------------------------

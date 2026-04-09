@@ -30,6 +30,10 @@ type Config struct {
 	// Plaintext HTTP is allowed only when AGENTCOOPDB_INSECURE_HTTP=1.
 	InsecureHTTP bool
 
+	// TrustProxy enables rewriting RemoteAddr from X-Real-Ip/X-Forwarded-For.
+	// Only set to true when running behind a trusted reverse proxy.
+	TrustProxy bool
+
 	// Database (gateway pool — never connects as superuser)
 	DatabaseURL           string
 	MigrationsDatabaseURL string
@@ -74,6 +78,7 @@ func Load() (*Config, error) {
 	c := &Config{
 		HTTPAddr:             envOr("AGENTCOOPDB_HTTP_ADDR", ":8080"),
 		InsecureHTTP:         envBool("AGENTCOOPDB_INSECURE_HTTP", false),
+		TrustProxy:           envBool("AGENTCOOPDB_TRUST_PROXY", false),
 		MaxRequestBodyBytes:  1048576,
 		MaxResponseBodyBytes: 8388608,
 
@@ -193,6 +198,7 @@ func Usage() string {
     AGENTCOOPDB_MAX_REQUEST_BODY_BYTES       (default 1048576)
     AGENTCOOPDB_MAX_RESPONSE_BODY_BYTES      (default 8388608)
     AGENTCOOPDB_INSECURE_HTTP                allow plaintext HTTP (default "false")
+    AGENTCOOPDB_TRUST_PROXY                  trust X-Real-Ip/X-Forwarded-For (default "false")
 
   Database
     AGENTCOOPDB_DATABASE_URL                 [required] gateway pool URL

@@ -92,13 +92,13 @@ certificate is issued, the API is reachable at `https://db.example.com/`.
 
 ```bash
 docker compose -p agentcoopdb exec api /app/agentic-coop-db-server -version
-docker compose -p agentcoopdb exec -e DATABASE_URL='postgres://agentcoopdb_owner@postgres/agentcoopdb?sslmode=disable' \
-  api sh -c './scripts/gen-key.sh default dbadmin'
+docker compose -p agentcoopdb exec api /app/agentic-coop-db-server \
+  -mint-key -mint-workspace default -mint-role dbadmin
 ```
 
-Or, if you have the host repo: run `./scripts/gen-key.sh` against the
-exposed host (note: postgres is NOT exposed in the cloud profile, so use
-the in-container path above).
+Or, if you have the host repo: run `./scripts/gen-key.sh` from the host
+(note: postgres is NOT exposed in the cloud profile, so use the
+in-container path above).
 
 ## 6. Backup verification
 

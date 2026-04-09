@@ -71,7 +71,7 @@ func keyIDFromToken(t *testing.T, h *Harness, token string) string {
 	require.True(t, len(rest) >= keyIDEncodedLen, "token too short for keyID: %s", token)
 	keyID := rest[:keyIDEncodedLen]
 	var dbID string
-	require.NoError(t, h.Pool.QueryRow(context.Background(),
+	require.NoError(t, h.OwnerPool.QueryRow(context.Background(),
 		`SELECT id FROM api_keys WHERE key_id = $1`, keyID).Scan(&dbID))
 	return dbID
 }

@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -57,10 +58,11 @@ func repoMigrationsDir(t *testing.T) string {
 
 // Harness is the wired-up server bound to a testcontainers Postgres.
 type Harness struct {
-	T      *testing.T
-	Pool   *pgxpool.Pool
-	Server *httptest.Server
-	Auth   *auth.Store
+	T         *testing.T
+	Pool      *pgxpool.Pool // gateway-role pool (used by the API server)
+	OwnerPool *pgxpool.Pool // owner-role pool (used for test setup only)
+	Server    *httptest.Server
+	Auth      *auth.Store
 }
 
 // StartHarness brings up Postgres, runs migrations, wires the API, and
@@ -100,25 +102,33 @@ func StartHarness(t *testing.T) *Harness {
 	// the URL alone (injectPassword treats an empty password as a no-op).
 	require.NoError(t, db.RunMigrations(ctx, dsn, ""))
 
-	// In production the gateway pool's role (agentcoopdb_gateway) has its
-	// search_path set to "agentcoopdb, public" by migration 0007, so bare
-	// table names like `api_keys` resolve to `agentcoopdb.api_keys`. In
-	// these in-process tests we reuse the migration owner DSN as the
-	// pool DSN (no separate gateway-role bootstrap), and agentcoopdb_owner
-	// has the default search_path of "$user", public — which does NOT
-	// include agentcoopdb. Patch it here so auth.Store and the rest of the
-	// API code can keep using bare table names without test-specific
-	// changes.
+	// Set up the owner pool for test-setup operations (MintWorkspaceAndKey,
+	// keyIDFromToken, etc.) that need direct access to control-plane tables.
+	// Also patch the owner search_path so bare table names resolve.
 	patchConn, err := pgx.Connect(ctx, dsn)
 	require.NoError(t, err)
 	_, err = patchConn.Exec(ctx, `ALTER ROLE agentcoopdb_owner SET search_path TO agentcoopdb, public`)
 	require.NoError(t, err)
 	require.NoError(t, patchConn.Close(ctx))
 
-	// Reconnect as the gateway role for the pool. The migrations create
-	// agentcoopdb_gateway and grant it dbadmin/dbuser membership.
-	gatewayDSN := dsn // testcontainers gives us the owner DSN; for tests we
-	// reuse it because the in-process tests are the only consumer.
+	ownerPool, err := db.OpenPool(ctx, db.PoolConfig{URL: dsn, MaxConns: 5, MinConns: 1})
+	require.NoError(t, err)
+	t.Cleanup(ownerPool.Close)
+
+	// Build a gateway-role DSN so the API pool exercises the real privilege
+	// boundary. The migrations (0004) already created the agentcoopdb_gateway
+	// role with LOGIN; we just need to set a password so we can connect.
+	gwConn, err := pgx.Connect(ctx, dsn)
+	require.NoError(t, err)
+	_, err = gwConn.Exec(ctx, `ALTER ROLE agentcoopdb_gateway WITH PASSWORD 'testgw'`)
+	require.NoError(t, err)
+	require.NoError(t, gwConn.Close(ctx))
+
+	parsed, err := url.Parse(dsn)
+	require.NoError(t, err)
+	parsed.User = url.UserPassword("agentcoopdb_gateway", "testgw")
+	gatewayDSN := parsed.String()
+
 	pool, err := db.OpenPool(ctx, db.PoolConfig{URL: gatewayDSN, MaxConns: 5, MinConns: 1})
 	require.NoError(t, err)
 	t.Cleanup(pool.Close)
@@ -153,6 +163,7 @@ func StartHarness(t *testing.T) *Harness {
 	executor := sqlpkg.NewExecutor(pool, sqlpkg.ExecutorConfig{
 		StatementTimeout: cfg.StatementTimeout,
 		IdleInTxTimeout:  cfg.IdleInTxTimeout,
+		MaxResponseBytes: 16 * 1024 * 1024, // 16 MiB — generous for tests
 	})
 	registry := rpc.NewRegistry()
 	dispatcher := rpc.NewDispatcher(pool, registry, logger)
@@ -174,7 +185,7 @@ func StartHarness(t *testing.T) *Harness {
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 
-	return &Harness{T: t, Pool: pool, Server: srv, Auth: store}
+	return &Harness{T: t, Pool: pool, OwnerPool: ownerPool, Server: srv, Auth: store}
 }
 
 // MintWorkspaceAndKey is a tiny helper that creates a workspace + an
@@ -188,7 +199,7 @@ func (h *Harness) MintWorkspaceAndKey(ctx context.Context, name, role string) (w
 	// the schema explicitly. Also: workspaces.name has no UNIQUE
 	// constraint so ON CONFLICT (name) won't bind — use a not-exists
 	// guard instead.
-	_, err := h.Pool.Exec(ctx, `
+	_, err := h.OwnerPool.Exec(ctx, `
 		INSERT INTO agentcoopdb.workspaces (id, name)
 		SELECT $1, $2
 		WHERE NOT EXISTS (SELECT 1 FROM agentcoopdb.workspaces WHERE name = $2)

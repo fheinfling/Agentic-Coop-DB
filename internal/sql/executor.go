@@ -2,6 +2,7 @@ package sql
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -13,10 +14,15 @@ import (
 	"github.com/fheinfling/agentic-coop-db/internal/tenant"
 )
 
+// ErrResponseTooLarge is returned when the accumulated SELECT result exceeds
+// MaxResponseBytes.
+var ErrResponseTooLarge = errors.New("response exceeds maximum allowed size")
+
 // ExecutorConfig configures the request-time tx settings.
 type ExecutorConfig struct {
 	StatementTimeout time.Duration
 	IdleInTxTimeout  time.Duration
+	MaxResponseBytes int64 // 0 means unlimited
 }
 
 // Executor runs validated SQL inside a request transaction.
@@ -90,10 +96,19 @@ func (e *Executor) Execute(ctx context.Context, in ExecuteInput) (*Response, err
 			resp.Columns[i] = d.Name
 		}
 
+		var approxBytes int64
 		for rows.Next() {
 			values, err := rows.Values()
 			if err != nil {
 				return nil, classifyPgErr(err)
+			}
+			if e.cfg.MaxResponseBytes > 0 {
+				b, _ := json.Marshal(values)
+				approxBytes += int64(len(b)) + 1 // +1 for comma separator
+				if approxBytes > e.cfg.MaxResponseBytes {
+					rows.Close()
+					return nil, ErrResponseTooLarge
+				}
 			}
 			resp.Rows = append(resp.Rows, values)
 		}

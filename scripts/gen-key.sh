@@ -14,8 +14,8 @@
 #   1. AGENTCOOPDB_API_CONTAINER env var (Coolify, k8s, any orchestrator
 #      where the api runs as a named container) — `docker exec` into it
 #   2. agentic-coop-db-server binary on PATH (local builds or installed binaries)
-#   3. local docker container literally named agentic-coop-db-api
-#      (the compose dev profile names it that way)
+#   3. local docker container named agentcoopdb-api-1
+#      (default name when using `docker compose -p agentcoopdb`)
 #
 # All the actual work — random generation, argon2id hashing, INSERTing
 # into agentcoopdb.workspaces and agentcoopdb.api_keys — happens inside the
@@ -37,8 +37,8 @@ if [[ -n "${AGENTCOOPDB_API_CONTAINER:-}" ]]; then
   exec docker exec "${AGENTCOOPDB_API_CONTAINER}" /app/agentic-coop-db-server "${args[@]}"
 elif command -v agentic-coop-db-server >/dev/null 2>&1; then
   exec agentic-coop-db-server "${args[@]}"
-elif command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' | grep -q '^agentic-coop-db-api'; then
-  exec docker exec agentic-coop-db-api /app/agentic-coop-db-server "${args[@]}"
+elif command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' | grep -q '^agentcoopdb-api-1'; then
+  exec docker exec agentcoopdb-api-1 /app/agentic-coop-db-server "${args[@]}"
 fi
 
 echo "could not invoke agentic-coop-db-server -mint-key" >&2

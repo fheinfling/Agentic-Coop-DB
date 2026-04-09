@@ -7,9 +7,11 @@ independently sufficient for its threat.
 
 ## 1. SQL injection prevention
 
-- **Mandatory parameterisation.** The endpoint body is `{sql, params}`. The
-  validator parses the SQL and counts `$N` placeholders; if the count does
-  not match `len(params)` the request is rejected with HTTP 400.
+- **Placeholder–parameter consistency.** The endpoint body is `{sql, params}`.
+  The validator parses the SQL with `pg_query.Scan` and counts `$N`
+  placeholders; if the count does not match `len(params)` the request is
+  rejected with HTTP 400. Queries with zero placeholders and zero params are
+  allowed (e.g. `SELECT 1`, DDL).
 - **Single statement only.** `pg_query.Parse` returns a list of top-level
   statements; the validator rejects anything other than a list of length 1.
   This blocks the canonical `'; DROP TABLE users; --` chain.
@@ -18,7 +20,7 @@ independently sufficient for its threat.
   binding (`tx.Query(ctx, sql, args...)`); values are sent as a separate
   field on the wire and never interpolated into the SQL text.
 - **SDK ergonomics push parameterisation.** `db.execute(sql, params)` is
-  easier to use than building an f-string. The Python SDK ships with
+  easier to use than building an f-string. A future release will include
   `agentcoopdb-lint`, a tiny ast-based linter that flags
   `db.execute(f"...{x}...")` patterns.
 
@@ -101,16 +103,23 @@ independently sufficient for its threat.
 
 - **Audit log** (`audit_logs` table): every authenticated request writes a
   row with `request_id, workspace_id, key_id, endpoint, command, sql_hash,
-  params_hash, duration_ms, error_code, client_ip`. The full SQL/params go
-  to the slog stream by default; `--audit-include-sql` enables full capture
-  for compliance use cases.
+  params_hash, duration_ms, error_code, client_ip`. Metadata (request_id,
+  workspace_id, endpoint, command, duration, status, error_code, sqlstate,
+  client_ip) goes to the slog stream by default. Full SQL text and params
+  are stored in the `audit_logs` table only when
+  `AGENTCOOPDB_AUDIT_INCLUDE_SQL=true` is set.
+- **Client IP**: by default the server uses the TCP peer address for audit
+  logging. Set `AGENTCOOPDB_TRUST_PROXY=true` only when running behind a
+  trusted reverse proxy (Caddy, nginx, cloud LB) to use `X-Real-Ip` /
+  `X-Forwarded-For` headers.
 - **Rate limiting**: per-key token bucket, default 60 req/s sustained / 120 burst. Every response carries `X-RateLimit-Limit` and `X-RateLimit-Remaining` headers so clients can track headroom. 429 responses additionally include `Retry-After: 1`.
 - **Request size limits**: 1 MiB request body, 8 MiB response body default.
 - **Timeouts**: read header 5s, read 10s, write 30s, idle 120s, statement
   timeout 5s (per request, configurable up to 60s).
 - **Secrets**: file-backed in compose, `external: true` in swarm. No
   secrets in environment variables in production profiles.
-- **Container hardening**: distroless final image, `USER 65532:65532`,
+- **Container hardening**: Alpine final image (instead of distroless, to
+  allow `docker exec` for admin tasks like key minting), `USER 65532:65532`,
   read-only root filesystem, `cap_drop: [ALL]`, `no-new-privileges`.
 - **Dependency scanning**: `govulncheck` and `pip-audit` in CI on every PR.
   CodeQL on the default branch.

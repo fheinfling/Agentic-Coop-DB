@@ -1,3 +1,8 @@
+// Registry is an in-memory store of RPC procedures loaded from the filesystem
+// at startup (see LoadBuiltins). Migration 0003 creates an rpc_registry table
+// in the database, but it is not currently read at runtime — it exists as a
+// forward-compatible schema for a future admin API that manages procedures
+// through SQL rather than filesystem files.
 package rpc
 
 import (

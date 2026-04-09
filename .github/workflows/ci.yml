@@ -73,7 +73,17 @@ jobs:
       - name: build
         run: go build ./...
       - name: test
-        run: go test -short ./...
+        run: go test -short -coverprofile=coverage.out ./...
+      - name: coverage check
+        if: matrix.os == 'ubuntu-24.04'
+        run: |
+          total=$(go tool cover -func=coverage.out | grep '^total:' | awk '{print $3}' | tr -d '%')
+          echo "Total coverage: ${total}%"
+          threshold=40
+          if awk "BEGIN {exit !(${total} < ${threshold})}"; then
+            echo "::error::Coverage ${total}% is below the ${threshold}% threshold"
+            exit 1
+          fi
 
   integration-go:
     runs-on: ubuntu-24.04
@@ -117,6 +127,8 @@ jobs:
       - name: mypy
         run: cd clients/python && mypy src/agentcoopdb
       - name: pytest
+        # Note: e2e tests (test_e2e_offline.py) are skipped here because they
+        # require a running server stack (RUN_E2E=1). Unit/mock tests run.
         run: cd clients/python && pytest -q
       - name: pip-audit
         run: |

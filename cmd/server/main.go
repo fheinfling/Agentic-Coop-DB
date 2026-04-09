@@ -247,6 +247,7 @@ func run() error {
 	executor := sqlpkg.NewExecutor(pool, sqlpkg.ExecutorConfig{
 		StatementTimeout: cfg.StatementTimeout,
 		IdleInTxTimeout:  cfg.IdleInTxTimeout,
+		MaxResponseBytes: cfg.MaxResponseBodyBytes,
 	})
 
 	rpcRegistry := rpc.NewRegistry()
@@ -313,7 +314,7 @@ func run() error {
 	handler = httpapi.AccessLog(logger)(handler)
 	handler = httpapi.Recoverer(logger)(handler)
 	handler = httpapi.RequestID(handler)
-	handler = httpapi.RealIP(handler)
+	handler = httpapi.RealIP(cfg.TrustProxy)(handler)
 
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,

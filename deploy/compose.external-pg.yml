@@ -99,7 +99,7 @@
 # Once the deploy is healthy, exec into the running container (your
 # platform's `exec` equivalent) and run:
 #
-#     /app/scripts/gen-key.sh default dbadmin
+#     /app/agentic-coop-db-server -mint-key -mint-workspace default -mint-role dbadmin
 #
 # Or, if you have psql access to the database from elsewhere, you can
 # run gen-key.sh against the same DATABASE_URL — it does not need to

@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -185,6 +184,13 @@ func (a *API) handleSQLExecute(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	body, _ := json.Marshal(resp)
+	if limit := a.deps.Config.MaxResponseBodyBytes; limit > 0 && int64(len(body)) > limit {
+		problem := Problem{Title: "response_too_large", Status: http.StatusRequestEntityTooLarge, Detail: "serialized response exceeds AGENTCOOPDB_MAX_RESPONSE_BODY_BYTES"}
+		WriteProblem(w, problem)
+		a.audit(r, ws, "POST /v1/sql/execute", res.Command, req.SQL, req.Params, start, problem.Status, sqlpkg.ErrResponseTooLarge)
+		a.deps.Metrics.SQLStatements.WithLabelValues(res.Command, "00000").Inc()
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(body)
@@ -356,12 +362,6 @@ func (a *API) audit(r *http.Request, ws *auth.WorkspaceContext, endpoint, comman
 }
 
 func clientIP(r *http.Request) string {
-	if v := r.Header.Get("X-Forwarded-For"); v != "" {
-		if i := strings.IndexByte(v, ','); i >= 0 {
-			return strings.TrimSpace(v[:i])
-		}
-		return strings.TrimSpace(v)
-	}
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		return r.RemoteAddr

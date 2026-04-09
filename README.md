@@ -164,9 +164,10 @@ The gateway is a natural fit for AI agent workloads:
 
 - **HTTP-only** — no native Postgres driver required in the agent runtime.
 - **API-key auth** — easy to inject via environment variable or secrets manager.
-- **Parameterized SQL** — the gateway rejects non-parameterized calls at parse
-  time, which means LLM-generated SQL cannot embed literal values (a common
-  injection vector).
+- **Parameterized SQL** — the gateway validates that `$N` placeholder count
+  matches the params array length and uses server-side binding — values are
+  never interpolated into the SQL string, eliminating the most common
+  injection vector in LLM-generated SQL.
 - **pgvector** — store and search embeddings alongside structured data.
 - **Idempotency keys** — retryable writes even over flaky networks.
 

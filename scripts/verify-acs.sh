@@ -79,10 +79,10 @@ status="$(curl -fsS "${HDR[@]}" -X POST "${URL}/v1/sql/execute" -d '{"sql":"SELE
 
 # AC6.3 — `agentic-coop-db doctor` (best-effort: only run if the python CLI is on PATH)
 if command -v agentcoopdb >/dev/null 2>&1; then
-  if agentic-coop-db doctor >/dev/null 2>&1; then
-    pass "6.3" "agentic-coop-db doctor exits 0"
+  if agentcoopdb doctor >/dev/null 2>&1; then
+    pass "6.3" "agentcoopdb doctor exits 0"
   else
-    fail "6.3" "agentic-coop-db doctor failed"
+    fail "6.3" "agentcoopdb doctor failed"
   fi
 else
   info "skipping AC6.3 — agentcoopdb CLI not on PATH"

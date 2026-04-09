@@ -1,0 +1,37 @@
+name: ossf scorecard
+
+# Scorecard requires public repo visibility to query the GitHub GraphQL
+# API. While the repo is private this workflow is effectively disabled.
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Run weekly on Sunday at 05:00 UTC.
+    - cron: "0 5 * * 0"
+
+permissions: read-all
+
+jobs:
+  analysis:
+    if: ${{ !github.event.repository.private }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: run scorecard
+        uses: ossf/scorecard-action@v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: upload sarif
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif

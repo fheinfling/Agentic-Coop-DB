@@ -20,7 +20,7 @@ jobs:
       matrix:
         language: [go, python]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: initialize codeql
         uses: github/codeql-action/init@v3

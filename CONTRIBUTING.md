@@ -75,6 +75,30 @@ the only place that wires the layers together.
       usage documentation
 - [ ] No `// TODO` comments — file a GitHub issue instead
 
+## Review process
+
+Every PR requires:
+
+1. **CI green** — lint, unit tests, and integration tests must pass.
+2. **AI review** — CodeRabbit reviews every PR automatically and leaves
+   inline feedback. Address or dismiss its comments before requesting human
+   review.
+3. **Maintainer approval** — `@fheinfling` is auto-requested via `CODEOWNERS`.
+
+Small, focused PRs merge fastest. If your change touches multiple concerns,
+consider splitting it.
+
+## Release process
+
+Releases follow [Semantic Versioning](https://semver.org/):
+
+1. Maintainer updates `CHANGELOG.md` with the new version and date.
+2. Maintainer tags the commit: `git tag v0.2.0 && git push origin v0.2.0`.
+3. The `release.yml` workflow creates a GitHub release with the extracted
+   changelog notes.
+4. The `build-images.yml` workflow publishes multi-arch Docker images to
+   `ghcr.io`.
+
 ## Adding a feature idea
 
 File a GitHub issue with the `feature` label. Describe the problem, proposed

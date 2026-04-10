@@ -238,7 +238,7 @@ func run() error {
 
 	metrics := observability.NewMetrics(authCache.Len)
 
-	auditor := audit.NewWriter(pool, logger, cfg.AuditIncludeSQL)
+	auditor := audit.NewWriter(pool, logger, cfg.AuditDisabled, cfg.AuditIncludeSQL)
 
 	validator := sqlpkg.NewValidator(sqlpkg.ValidatorConfig{
 		MaxStatementBytes:  cfg.MaxStatementBytes,

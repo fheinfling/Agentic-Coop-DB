@@ -37,15 +37,17 @@ type Entry struct {
 type Writer struct {
 	pool       *pgxpool.Pool
 	logger     *slog.Logger
+	disabled   bool
 	includeSQL bool
 }
 
-// NewWriter constructs a Writer.
-func NewWriter(pool *pgxpool.Pool, logger *slog.Logger, includeSQL bool) *Writer {
+// NewWriter constructs a Writer. When disabled is true, Write logs the request
+// to slog but skips the audit_logs table insert entirely.
+func NewWriter(pool *pgxpool.Pool, logger *slog.Logger, disabled, includeSQL bool) *Writer {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Writer{pool: pool, logger: logger, includeSQL: includeSQL}
+	return &Writer{pool: pool, logger: logger, disabled: disabled, includeSQL: includeSQL}
 }
 
 // Write inserts the entry. Always logs the structured form to slog as well.
@@ -62,7 +64,7 @@ func (w *Writer) Write(ctx context.Context, e Entry) {
 		slog.String("sqlstate", e.SQLState),
 		slog.String("client_ip", e.ClientIP),
 	)
-	if w.pool == nil {
+	if w.disabled || w.pool == nil {
 		return
 	}
 

@@ -151,21 +151,41 @@ func TestParamsHash(t *testing.T) {
 }
 
 func TestNewWriter_NilLogger(t *testing.T) {
-	w := NewWriter(nil, nil, false)
+	w := NewWriter(nil, nil, false, false)
 	if w == nil {
-		t.Fatal("NewWriter(nil, nil, false) returned nil")
+		t.Fatal("NewWriter(nil, nil, false, false) returned nil")
 	}
 }
 
 func TestNewWriter_IncludeSQL(t *testing.T) {
-	w := NewWriter(nil, nil, true)
+	w := NewWriter(nil, nil, false, true)
 	if !w.includeSQL {
-		t.Error("NewWriter(nil, nil, true).includeSQL = false, want true")
+		t.Error("NewWriter(nil, nil, false, true).includeSQL = false, want true")
 	}
 }
 
+func TestNewWriter_Disabled(t *testing.T) {
+	w := NewWriter(nil, nil, true, false)
+	if !w.disabled {
+		t.Error("NewWriter(nil, nil, true, false).disabled = false, want true")
+	}
+}
+
+func TestWrite_Disabled(t *testing.T) {
+	w := NewWriter(nil, nil, true, false)
+	// Should not panic; Write logs to slog and returns early when disabled.
+	w.Write(context.Background(), Entry{
+		RequestID:  "req-disabled",
+		Endpoint:   "/query",
+		Command:    "SELECT",
+		SQL:        "SELECT 1",
+		DurationMS: 5,
+		StatusCode: 200,
+	})
+}
+
 func TestWrite_NilPool(t *testing.T) {
-	w := NewWriter(nil, nil, false)
+	w := NewWriter(nil, nil, false, false)
 	// Should not panic; Write logs and returns early when pool is nil.
 	w.Write(context.Background(), Entry{
 		RequestID:   "req-1",
@@ -182,7 +202,7 @@ func TestWrite_NilPool(t *testing.T) {
 }
 
 func TestWrite_NilPool_VariousInputs(t *testing.T) {
-	w := NewWriter(nil, nil, false)
+	w := NewWriter(nil, nil, false, false)
 
 	cases := []struct {
 		name  string

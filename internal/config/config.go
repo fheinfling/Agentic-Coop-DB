@@ -59,6 +59,7 @@ type Config struct {
 	RateLimitBurst     int
 
 	// Audit
+	AuditDisabled   bool
 	AuditIncludeSQL bool
 
 	// Observability
@@ -87,6 +88,7 @@ func Load() (*Config, error) {
 		GatewayPassword:       os.Getenv("AGENTCOOPDB_GATEWAY_PASSWORD"),
 		OwnerPassword:         os.Getenv("AGENTCOOPDB_OWNER_PASSWORD"),
 
+		AuditDisabled:   envBool("AGENTCOOPDB_AUDIT_DISABLED", false),
 		AuditIncludeSQL: envBool("AGENTCOOPDB_AUDIT_INCLUDE_SQL", false),
 		MetricsEnabled:  envBool("AGENTCOOPDB_METRICS_ENABLED", true),
 		MigrateOnStart:  envBool("AGENTCOOPDB_MIGRATE_ON_START", true),
@@ -225,6 +227,7 @@ func Usage() string {
     AGENTCOOPDB_RATE_LIMIT_BURST             (default 120)
 
   Audit
+    AGENTCOOPDB_AUDIT_DISABLED               skip all writes to audit_logs table (default "false")
     AGENTCOOPDB_AUDIT_INCLUDE_SQL            store full SQL in audit_logs (default "false")
 
   Observability

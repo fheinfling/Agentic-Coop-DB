@@ -107,7 +107,10 @@ independently sufficient for its threat.
   workspace_id, endpoint, command, duration, status, error_code, sqlstate,
   client_ip) goes to the slog stream by default. Full SQL text and params
   are stored in the `audit_logs` table only when
-  `AGENTCOOPDB_AUDIT_INCLUDE_SQL=true` is set.
+  `AGENTCOOPDB_AUDIT_INCLUDE_SQL=true` is set. Set
+  `AGENTCOOPDB_AUDIT_DISABLED=true` to skip all `audit_logs` table writes
+  entirely (slog access logging still fires); useful in development or
+  high-throughput environments where DB audit overhead is undesirable.
 - **Client IP**: by default the server uses the TCP peer address for audit
   logging. Set `AGENTCOOPDB_TRUST_PROXY=true` only when running behind a
   trusted reverse proxy (Caddy, nginx, cloud LB) to use `X-Real-Ip` /

@@ -2,7 +2,6 @@ package mcp
 
 import (
 	"context"
-	"encoding/json"
 	"strings"
 	"testing"
 
@@ -11,12 +10,12 @@ import (
 
 // fakeDoer is a hand-written test double for the Doer interface.
 type fakeDoer struct {
-	sqlResult *SQLResult
-	sqlErr    error
-	rpcResult map[string]any
-	rpcErr    error
-	meResult  *MeResult
-	meErr     error
+	sqlResult    *SQLResult
+	sqlErr       error
+	rpcResult    map[string]any
+	rpcErr       error
+	meResult     *MeResult
+	meErr        error
 	healthResult *HealthResult
 	healthErr    error
 
@@ -419,13 +418,3 @@ func TestFormatVector(t *testing.T) {
 	}
 }
 
-// Helper to parse JSON from tool result text for structured assertions.
-func parseResultJSON(t *testing.T, result *gomcp.CallToolResult) map[string]any {
-	t.Helper()
-	text := resultText(t, result)
-	var m map[string]any
-	if err := json.Unmarshal([]byte(text), &m); err != nil {
-		t.Fatalf("parse result JSON: %v\ntext: %s", err, text)
-	}
-	return m
-}

@@ -193,11 +193,11 @@ func (c *Client) setCommonHeaders(req *http.Request) {
 }
 
 func (c *Client) doAndDecode(req *http.Request, dest any) error {
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(req) //nolint:gosec // URL is constructed from trusted GatewayURL config, not user input
 	if err != nil {
 		return fmt.Errorf("http request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

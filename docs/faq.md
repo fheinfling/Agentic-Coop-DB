@@ -55,19 +55,25 @@ sure the extension is actually installed in the postgres image — for
 custom extensions, build your own postgres image and reference it in the
 compose file.
 
-### I get "permission denied for schema public" on a managed Postgres (Coolify, RDS, …)
+### I get "permission denied" errors during migrations (Coolify, RDS, …)
 
-PostgreSQL 15+ revoked the default `CREATE` privilege on the `public` schema.
-When the migrations user is not a superuser, golang-migrate cannot create its
-`schema_migrations` tracking table.
+Migrations create roles (`GRANT ... TO`, `BYPASSRLS`), transfer schema
+ownership, and revoke system functions — all of which require a PostgreSQL
+**superuser**. `AGENTCOOPDB_MIGRATIONS_DATABASE_URL` must point to a superuser
+account (typically `postgres`), not a regular application user.
 
-Since v0.1 the server handles this automatically: `EnsureOwnerRole` grants
-`CREATE ON SCHEMA public` to the connecting user before migrations run. If
-you see this error on an older build, either rebuild or run this one-liner
-against your database:
+On Coolify, the `postgres` superuser is always available inside the Postgres
+container. Set the migrations URL to use it:
+
+```
+AGENTCOOPDB_MIGRATIONS_DATABASE_URL=postgres://postgres@<pg-host>:5432/<dbname>?sslmode=disable
+AGENTCOOPDB_OWNER_PASSWORD=<postgres-user-password>
+```
+
+If your platform only gives you a non-superuser account, promote it:
 
 ```sql
-GRANT CREATE ON SCHEMA public TO "<your-migrations-user>";
+ALTER USER "<your-user>" WITH SUPERUSER;
 ```
 
 ### Is this production-ready?

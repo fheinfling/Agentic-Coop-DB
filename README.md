@@ -60,8 +60,8 @@ environment variables:
 | Variable | Purpose |
 |----------|---------|
 | `AGENTCOOPDB_DATABASE_URL` | Gateway pool URL (`postgres://agentcoopdb_gateway@host:5432/dbname`) |
-| `AGENTCOOPDB_MIGRATIONS_DATABASE_URL` | Superuser URL for migrations (`postgres://postgres@host:5432/dbname`) |
-| `AGENTCOOPDB_OWNER_PASSWORD` | Password for the migrations user |
+| `AGENTCOOPDB_MIGRATIONS_DATABASE_URL` | **Superuser** URL for migrations — must be a Postgres superuser such as `postgres` (`postgres://postgres@host:5432/dbname`) |
+| `AGENTCOOPDB_OWNER_PASSWORD` | Password for the superuser in the migrations URL |
 | `AGENTCOOPDB_GATEWAY_PASSWORD` | Password to set on the `agentcoopdb_gateway` role |
 | `AGENTCOOPDB_INSECURE_HTTP` | Set to `true` if your platform terminates TLS for you |
 

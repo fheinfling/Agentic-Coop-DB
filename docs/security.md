@@ -126,6 +126,10 @@ independently sufficient for its threat.
   read-only root filesystem, `cap_drop: [ALL]`, `no-new-privileges`.
 - **Dependency scanning**: `govulncheck` and `pip-audit` in CI on every PR.
   CodeQL on the default branch.
+- **Vulnerability suppression**: known-safe advisories that cannot be resolved
+  by upgrading (e.g. test-only transitive deps, vulnerabilities requiring a
+  different module path) are documented and time-boxed in `osv-scanner.toml`.
+  Suppressions are reviewed on or before their `ignoreUntil` date.
 
 ## Reporting a vulnerability
 

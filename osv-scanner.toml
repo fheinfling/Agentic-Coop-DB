@@ -1,0 +1,68 @@
+# osv-scanner.toml — Vulnerability suppressions for the OSSF Scorecard OSV scan.
+#
+# Each [[IgnoredVulns]] entry suppresses a known vulnerability that has been
+# reviewed and determined safe to carry in this project's specific context.
+# Suppressions are time-boxed: ignoreUntil forces periodic re-evaluation.
+#
+# Review cadence: re-evaluate on or before the ignoreUntil date, or whenever
+# the affected dependency is bumped — whichever comes first.
+
+# ---------------------------------------------------------------------------
+# GO-2026-4883 & GO-2026-4887: Docker Engine AuthZ plugin bypass
+#
+# Affected module: github.com/docker/docker v28.5.2+incompatible (indirect)
+# Entry path:      testcontainers-go v0.41.0 -> docker/docker
+#
+# Why safe to suppress:
+#   1. docker/docker is a transitive test-only dependency — no .go file in this
+#      repo imports it directly.
+#   2. testcontainers is used exclusively in integration tests behind the
+#      //go:build integration build tag (test/integration/).
+#   3. The project does not configure Docker AuthZ plugins — the vulnerability's
+#      attack surface does not exist.
+#   4. The fix (moby/moby/v2 v2.0.0-beta.8) is on a different Go module path.
+#      No patch exists on the docker/docker or moby/moby v1 module path, so
+#      upgrading within the current module path cannot resolve the advisory.
+#   5. govulncheck confirms no vulnerable symbols are reachable from this code.
+# ---------------------------------------------------------------------------
+
+[[IgnoredVulns]]
+id = "GO-2026-4883"
+reason = "docker/docker is an indirect test-only dep (via testcontainers-go); no AuthZ plugins configured; fix requires moby/moby/v2 module path migration — not available on v1"
+ignoreUntil = "2026-10-12"
+
+[[IgnoredVulns]]
+id = "GO-2026-4887"
+reason = "docker/docker is an indirect test-only dep (via testcontainers-go); no AuthZ plugins configured; fix requires moby/moby/v2 module path migration — not available on v1"
+ignoreUntil = "2026-10-12"
+
+# ---------------------------------------------------------------------------
+# GO-2026-4771 & GO-2026-4772: pgproto3 memory safety issues
+#
+# Affected module: github.com/jackc/pgx/v5 v5.9.1 (direct)
+# Sub-package:     pgproto3 (internal to pgx, never imported directly)
+#
+# Why safe to suppress:
+#   1. pgproto3 is an internal implementation detail of pgx — no .go file in
+#      this repo imports it directly.
+#   2. govulncheck confirms no vulnerable symbols are reachable from this code.
+#   3. Exploitation requires a malicious PostgreSQL server or a successful MITM
+#      on the DB connection. All DB connections go to operator-configured
+#      trusted PostgreSQL servers via AGENTCOOPDB_DATABASE_URL — users cannot
+#      control the DB endpoint.
+#   4. Cloud deployment: Postgres runs on an internal Docker network
+#      (compose.cloud.yml: internal: true), unreachable from outside.
+#   5. External-PG profile: sslmode defaults to require, preventing passive
+#      MITM (compose.external-pg.yml).
+#   6. No fix is released yet — v5.9.1 is the latest pgx/v5 release.
+# ---------------------------------------------------------------------------
+
+[[IgnoredVulns]]
+id = "GO-2026-4771"
+reason = "pgproto3 is internal to pgx (never imported directly); no vulnerable symbols reachable (govulncheck clean); exploitation requires malicious DB server; no fix released yet"
+ignoreUntil = "2026-07-12"
+
+[[IgnoredVulns]]
+id = "GO-2026-4772"
+reason = "pgproto3 is internal to pgx (never imported directly); no vulnerable symbols reachable (govulncheck clean); exploitation requires malicious DB server; no fix released yet"
+ignoreUntil = "2026-07-12"

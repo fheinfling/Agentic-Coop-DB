@@ -265,19 +265,55 @@ For MCP-compatible agents, a standalone MCP server binary is included. It
 proxies tool calls to the gateway over HTTPS — every call goes through the
 full auth/rate-limit/tenant/validator/audit chain.
 
-**Build:**
+**Install:** download the binary for your platform from the
+[latest release](https://github.com/fheinfling/agentic-coop-db/releases/latest),
+extract it, and make it executable:
 
 ```bash
+# macOS (Apple Silicon)
+curl -fsSL https://github.com/fheinfling/agentic-coop-db/releases/latest/download/agentic-coop-db-mcp-darwin-arm64.tar.gz \
+  | tar xz && chmod +x agentic-coop-db-mcp && sudo mv agentic-coop-db-mcp /usr/local/bin/
+```
+
+<details><summary>Other platforms</summary>
+
+| Platform | Archive |
+|----------|---------|
+| macOS (Intel) | `agentic-coop-db-mcp-darwin-amd64.tar.gz` |
+| Linux (x86_64) | `agentic-coop-db-mcp-linux-amd64.tar.gz` |
+| Linux (ARM64) | `agentic-coop-db-mcp-linux-arm64.tar.gz` |
+| Windows (x86_64) | `agentic-coop-db-mcp-windows-amd64.zip` |
+
+</details>
+
+<details><summary>Alternative: go install / build from source</summary>
+
+```bash
+# go install (requires Go 1.26+)
+go install github.com/fheinfling/agentic-coop-db/cmd/mcp@latest
+
+# or build from a clone
 make build-mcp    # produces bin/agentic-coop-db-mcp
 ```
 
-**Configure your MCP client** (e.g. Claude Desktop `claude_desktop_config.json`):
+</details>
+
+**Claude Code** — one command:
+
+```bash
+claude mcp add agentic-coop-db \
+  -e AGENTCOOPDB_GATEWAY_URL=https://db.example.com \
+  -e AGENTCOOPDB_API_KEY=acd_live_<id>_<secret> \
+  -- agentic-coop-db-mcp
+```
+
+**Claude Desktop** — add to `claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "agentic-coop-db": {
-      "command": "/path/to/agentic-coop-db-mcp",
+      "command": "agentic-coop-db-mcp",
       "env": {
         "AGENTCOOPDB_GATEWAY_URL": "https://db.example.com",
         "AGENTCOOPDB_API_KEY": "acd_live_<id>_<secret>"
@@ -286,6 +322,25 @@ make build-mcp    # produces bin/agentic-coop-db-mcp
   }
 }
 ```
+
+**Cursor** — add to Settings > MCP Servers, or `.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "agentic-coop-db": {
+      "command": "agentic-coop-db-mcp",
+      "env": {
+        "AGENTCOOPDB_GATEWAY_URL": "https://db.example.com",
+        "AGENTCOOPDB_API_KEY": "acd_live_<id>_<secret>"
+      }
+    }
+  }
+}
+```
+
+**Verify:** ask your agent to _"use the whoami tool"_ — it should return your
+workspace, role, and environment.
 
 **Available tools:** `sql_execute`, `rpc_call`, `list_tables`,
 `describe_table`, `vector_search`, `vector_upsert`, `whoami`, `health`.

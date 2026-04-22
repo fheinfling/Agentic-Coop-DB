@@ -51,6 +51,9 @@ func TestLoad_DefaultsAndOverrides(t *testing.T) {
 	if cfg.MigrateOnStart != true {
 		t.Errorf("MigrateOnStart default: got %v, want true", cfg.MigrateOnStart)
 	}
+	if cfg.MCPEnabled {
+		t.Errorf("MCPEnabled default: got %v, want false", cfg.MCPEnabled)
+	}
 	// MIGRATIONS_DATABASE_URL should default to DATABASE_URL when unset.
 	if cfg.MigrationsDatabaseURL != cfg.DatabaseURL {
 		t.Errorf("MigrationsDatabaseURL default: got %q, want it to mirror DatabaseURL %q",

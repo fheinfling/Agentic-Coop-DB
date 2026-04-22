@@ -1,16 +1,117 @@
 # MCP Server
 
 The MCP (Model Context Protocol) server lets AI agents connect to Agentic Coop DB
-through any MCP-compatible client — Claude Desktop, Claude Code, Cursor, or
+through any MCP-compatible client — Claude Code, Cursor, VS Code, Windsurf, or
 custom agent frameworks.
 
-## Architecture
+Two connection methods are available:
 
-The MCP server is a **standalone binary** that acts as an HTTP client to the
-gateway. Every tool call results in an authenticated HTTP request that
-traverses the full middleware chain: auth, rate limiting, tenant isolation,
-SQL validation, and audit logging. The MCP binary never accesses the database
-directly.
+| Method | Transport | Best for |
+|--------|-----------|----------|
+| **Remote MCP** (recommended) | Streamable HTTP | Any client that supports remote MCP — no binary to install |
+| **Standalone binary** | stdio | Clients that only support local MCP servers |
+
+## Remote MCP (Streamable HTTP)
+
+The gateway can serve MCP directly over HTTP at `/v1/mcp`. Clients connect
+with a URL and an API key — no separate binary, no local process.
+
+```
+agent ──Streamable HTTP──► gateway /v1/mcp ──pgx──► postgres
+```
+
+Tool calls run inside the gateway process with the same auth, rate limiting,
+tenant isolation, SQL validation, and audit logging as the REST API — but
+without the HTTP round-trip overhead of the standalone binary.
+
+### Enable
+
+Set `AGENTCOOPDB_MCP_ENABLED=true` on the gateway. The endpoint is disabled
+by default.
+
+### Client setup
+
+#### Claude Code
+
+```bash
+claude mcp add agentic-coop-db \
+  --transport streamable-http \
+  https://db.example.com/v1/mcp \
+  -H "Authorization: Bearer acd_live_<id>_<secret>"
+```
+
+#### Cursor
+
+Add to Settings > MCP Servers, or to `.cursor/mcp.json` in your project:
+
+```json
+{
+  "mcpServers": {
+    "agentic-coop-db": {
+      "url": "https://db.example.com/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer acd_live_<id>_<secret>"
+      }
+    }
+  }
+}
+```
+
+#### VS Code (GitHub Copilot)
+
+Add to `.vscode/mcp.json` in your workspace:
+
+```json
+{
+  "servers": {
+    "agentic-coop-db": {
+      "url": "https://db.example.com/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer acd_live_<id>_<secret>"
+      }
+    }
+  }
+}
+```
+
+#### Windsurf
+
+Add to `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "agentic-coop-db": {
+      "serverUrl": "https://db.example.com/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer acd_live_<id>_<secret>"
+      }
+    }
+  }
+}
+```
+
+#### JetBrains IDEs
+
+Add to Settings > AI Assistant > MCP Servers:
+
+```json
+{
+  "mcpServers": {
+    "agentic-coop-db": {
+      "url": "https://db.example.com/v1/mcp",
+      "headers": {
+        "Authorization": "Bearer acd_live_<id>_<secret>"
+      }
+    }
+  }
+}
+```
+
+## Standalone binary (stdio)
+
+The standalone MCP binary acts as an HTTP client to the gateway. Use this
+when your client does not support remote MCP servers.
 
 ```
 agent ──MCP/stdio──► agentic-coop-db-mcp ──HTTPS──► gateway ──pgx──► postgres

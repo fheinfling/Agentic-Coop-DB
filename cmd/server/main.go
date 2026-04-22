@@ -33,10 +33,12 @@ import (
 	"github.com/fheinfling/agentic-coop-db/internal/config"
 	"github.com/fheinfling/agentic-coop-db/internal/db"
 	"github.com/fheinfling/agentic-coop-db/internal/httpapi"
+	mcppkg "github.com/fheinfling/agentic-coop-db/internal/mcp"
 	"github.com/fheinfling/agentic-coop-db/internal/observability"
 	"github.com/fheinfling/agentic-coop-db/internal/rpc"
 	sqlpkg "github.com/fheinfling/agentic-coop-db/internal/sql"
 	"github.com/fheinfling/agentic-coop-db/internal/version"
+	mcpserver "github.com/mark3labs/mcp-go/server"
 )
 
 func main() {
@@ -256,6 +258,8 @@ func run() error {
 	}
 	rpcDispatcher := rpc.NewDispatcher(pool, rpcRegistry, logger)
 
+	rateLimit := httpapi.NewRateLimit(cfg.RateLimitPerSecond, cfg.RateLimitBurst)
+
 	api := httpapi.New(httpapi.Deps{
 		Config:         cfg,
 		Logger:         logger,
@@ -267,6 +271,7 @@ func run() error {
 		Validator:      validator,
 		Executor:       executor,
 		RPCDispatcher:  rpcDispatcher,
+		RateLimit:      rateLimit,
 	})
 
 	// Periodically purge expired idempotency rows so the table does not
@@ -291,6 +296,28 @@ func run() error {
 			}
 		}
 	}()
+
+	// Embedded MCP server (Streamable HTTP transport).
+	var mcpHTTP *mcpserver.StreamableHTTPServer
+	if cfg.MCPEnabled {
+		doer := &directDoer{
+			pool:      pool,
+			validator: validator,
+			executor:  executor,
+			rpcDisp:   rpcDispatcher,
+			auditor:   auditor,
+			cfg:       cfg,
+			logger:    logger,
+		}
+		mcpSrv := mcppkg.NewServer(doer)
+		mcpHTTP = mcpserver.NewStreamableHTTPServer(mcpSrv,
+			mcpserver.WithHTTPContextFunc(func(ctx context.Context, r *http.Request) context.Context {
+				return r.Context()
+			}),
+			mcpserver.WithSessionIdleTTL(30*time.Minute),
+		)
+		logger.Info("embedded MCP server enabled", "path", "/v1/mcp")
+	}
 
 	mux := http.NewServeMux()
 
@@ -324,6 +351,16 @@ func run() error {
 	})
 	if cfg.MetricsEnabled {
 		mux.Handle("GET /metrics", metrics.Handler())
+	}
+
+	// MCP endpoint — must be registered before the /v1/ catch-all.
+	// /v1/mcp is more specific so Go's ServeMux routes it correctly.
+	if cfg.MCPEnabled {
+		var mcpHandler http.Handler = mcpHTTP
+		mcpHandler = extendWriteDeadline(logger)(mcpHandler)
+		mcpHandler = rateLimit.Middleware(mcpHandler)
+		mcpHandler = authMW.Authenticate(mcpHandler)
+		mux.Handle("/v1/mcp", mcpHandler)
 	}
 
 	// Versioned API surface — strip the /v1 prefix so the inner mux
@@ -369,11 +406,37 @@ func run() error {
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
+	// Shut down MCP first — its SSE streams are long-lived and would
+	// cause srv.Shutdown to block until the timeout expires.
+	if mcpHTTP != nil {
+		if err := mcpHTTP.Shutdown(shutdownCtx); err != nil {
+			logger.Warn("MCP shutdown error", "err", err)
+		}
+	}
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("shutdown: %w", err)
 	}
 	logger.Info("server stopped cleanly")
 	return nil
+}
+
+// extendWriteDeadline wraps a handler to disable the server's WriteTimeout
+// for GET requests. SSE streams (used by MCP's Streamable HTTP transport)
+// must stay open beyond the default timeout. POST and DELETE requests keep
+// the normal deadline. Abandoned connections are cleaned up by mcp-go's
+// session idle sweeper.
+func extendWriteDeadline(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodGet {
+				rc := http.NewResponseController(w)
+				if err := rc.SetWriteDeadline(time.Time{}); err != nil {
+					logger.Warn("failed to extend write deadline for SSE stream", "err", err)
+				}
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 // isLocalAddr returns true for "localhost:<port>", "127.0.0.1:<port>",

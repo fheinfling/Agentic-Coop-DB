@@ -48,6 +48,7 @@ services:
       AGENTCOOPDB_GATEWAY_PASSWORD_FILE: "/run/secrets/postgres_password"
       AGENTCOOPDB_LOG_FORMAT: "json"
       AGENTCOOPDB_METRICS_ENABLED: "true"
+      # AGENTCOOPDB_MCP_ENABLED: "true"  # uncomment to enable /v1/mcp
       # TLS is terminated by the reverse proxy on the frontend overlay
       # network; the API container itself speaks plain HTTP.
       AGENTCOOPDB_INSECURE_HTTP: "true"

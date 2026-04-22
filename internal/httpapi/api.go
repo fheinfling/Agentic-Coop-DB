@@ -20,7 +20,8 @@ import (
 	"github.com/fheinfling/agentic-coop-db/internal/version"
 )
 
-// Deps is the wiring bag passed to New. Every dependency is required.
+// Deps is the wiring bag passed to New. RateLimit is optional (a default
+// is created when nil); all other dependencies are required.
 type Deps struct {
 	Config         *config.Config
 	Logger         *slog.Logger
@@ -32,6 +33,7 @@ type Deps struct {
 	Validator      *sqlpkg.Validator
 	Executor       *sqlpkg.Executor
 	RPCDispatcher  *rpc.Dispatcher
+	RateLimit      *RateLimit
 }
 
 // API holds the wiring needed by the route handlers.
@@ -43,9 +45,13 @@ type API struct {
 
 // New constructs an API.
 func New(deps Deps) *API {
+	rl := deps.RateLimit
+	if rl == nil {
+		rl = NewRateLimit(deps.Config.RateLimitPerSecond, deps.Config.RateLimitBurst)
+	}
 	return &API{
 		deps:      deps,
-		rateLimit: NewRateLimit(deps.Config.RateLimitPerSecond, deps.Config.RateLimitBurst),
+		rateLimit: rl,
 		// Both /v1/sql/execute and /v1/rpc/call go through the same
 		// idempotency table; we instantiate one store at the API level so
 		// the SQL handler does not have to reach into the dispatcher.

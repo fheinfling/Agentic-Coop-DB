@@ -7,6 +7,20 @@ unauthenticated.
 > **MCP-compatible agents:** Instead of calling the HTTP API directly, you can
 > use the [MCP server](mcp.md) which exposes these endpoints as MCP tools.
 
+## /v1/mcp (MCP Streamable HTTP)
+
+Serves the MCP protocol over Streamable HTTP. Requires
+`AGENTCOOPDB_MCP_ENABLED=true`.
+
+- **POST** — JSON-RPC messages (tool calls, initialize, etc.)
+- **GET** — SSE stream for server-to-client notifications
+- **DELETE** — terminate an MCP session
+
+Auth, rate limiting, tenant isolation, and audit logging apply identically to
+the REST endpoints below.
+
+See [MCP server docs](mcp.md) for client setup instructions.
+
 ## POST /v1/sql/execute
 
 Forward a parameterised SQL statement.

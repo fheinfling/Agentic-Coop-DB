@@ -25,16 +25,26 @@ client ──HTTPS──► caddy ──HTTP──► api ──pgx──► pos
 
 ### MCP adapter
 
-The MCP server (`cmd/mcp/`) is a standalone binary that sits **outside** the
-`internal/` boundary. It is just another HTTP client, like the Python SDK:
+Two MCP transport modes are supported:
+
+**Embedded (Streamable HTTP)** — the gateway serves MCP directly at `/v1/mcp`
+when `AGENTCOOPDB_MCP_ENABLED=true`. Tool calls run in-process via the
+`directDoer` adapter, which calls the same core packages as the REST API
+without an HTTP round-trip:
+
+```
+agent ──Streamable HTTP──► caddy ──HTTP──► api /v1/mcp ──pgx──► postgres
+```
+
+**Standalone binary (stdio)** — `cmd/mcp/` is a separate binary that acts as
+an HTTP client. It sits outside the `internal/` boundary, like the Python SDK:
 
 ```
 agent ──MCP/stdio──► agentic-coop-db-mcp ──HTTPS──► caddy ──HTTP──► api ──pgx──► postgres
 ```
 
-Every MCP tool call results in an authenticated HTTP request, so the full
-middleware chain (auth, rate limiting, tenant isolation, validation, audit)
-applies. See [`docs/mcp.md`](mcp.md).
+Both paths apply the full middleware chain (auth, rate limiting, tenant
+isolation, validation, audit). See [`docs/mcp.md`](mcp.md).
 
 ### Gateway request flow (detail)
 

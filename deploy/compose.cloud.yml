@@ -25,6 +25,7 @@ services:
       AGENTCOOPDB_LOG_FORMAT: "json"
       AGENTCOOPDB_LOG_LEVEL: "info"
       AGENTCOOPDB_METRICS_ENABLED: "true"
+      # AGENTCOOPDB_MCP_ENABLED: "true"  # uncomment to enable /v1/mcp (Caddy auto-TLS covers it)
       # Caddy terminates TLS and forwards X-Forwarded-For / X-Real-Ip.
       AGENTCOOPDB_TRUST_PROXY: "true"
       # Cloud profile uses scram-sha-256 auth on the postgres backend.

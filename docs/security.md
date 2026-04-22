@@ -36,6 +36,10 @@ independently sufficient for its threat.
   hash. Comparison is constant-time.
 - **TLS is mandatory** outside of localhost. The server refuses to start
   with `AGENTCOOPDB_INSECURE_HTTP=1` unless that env var is explicitly set.
+- **MCP requests** (when `AGENTCOOPDB_MCP_ENABLED=true`) go through the same
+  auth middleware and per-key rate limiter as REST API requests. SSE
+  connections are bounded by a 30-minute session idle timeout to prevent
+  connection hoarding.
 
 ## 3. Authorisation (Postgres role grants)
 

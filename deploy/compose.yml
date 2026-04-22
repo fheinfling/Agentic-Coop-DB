@@ -48,6 +48,7 @@ services:
       AGENTCOOPDB_LOG_LEVEL: "info"
       AGENTCOOPDB_LOG_FORMAT: "json"
       AGENTCOOPDB_METRICS_ENABLED: "true"
+      # AGENTCOOPDB_MCP_ENABLED: "true"  # uncomment to enable /v1/mcp
     secrets:
       - postgres_password
     healthcheck:

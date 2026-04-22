@@ -68,6 +68,9 @@ type Config struct {
 	MetricsEnabled bool
 	OTELEndpoint   string
 
+	// MCP (embedded Streamable HTTP server)
+	MCPEnabled bool
+
 	// Run-once flags
 	MigrateOnStart bool
 }
@@ -90,6 +93,7 @@ func Load() (*Config, error) {
 
 		AuditDisabled:   envBool("AGENTCOOPDB_AUDIT_DISABLED", false),
 		AuditIncludeSQL: envBool("AGENTCOOPDB_AUDIT_INCLUDE_SQL", false),
+		MCPEnabled:      envBool("AGENTCOOPDB_MCP_ENABLED", false),
 		MetricsEnabled:  envBool("AGENTCOOPDB_METRICS_ENABLED", true),
 		MigrateOnStart:  envBool("AGENTCOOPDB_MIGRATE_ON_START", true),
 
@@ -235,6 +239,9 @@ func Usage() string {
     AGENTCOOPDB_LOG_FORMAT                   json or text (default "json")
     AGENTCOOPDB_METRICS_ENABLED              (default "true")
     AGENTCOOPDB_OTEL_EXPORTER_OTLP_ENDPOINT optional OTLP collector
+
+  MCP (embedded Streamable HTTP server)
+    AGENTCOOPDB_MCP_ENABLED                  enable /v1/mcp endpoint (default "false")
 
   Run-once
     AGENTCOOPDB_MIGRATE_ON_START             (default "true")

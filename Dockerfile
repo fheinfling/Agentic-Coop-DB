@@ -34,7 +34,7 @@ ARG ALPINE_VERSION=3.22
 # `docker/setup-qemu-action` which provides the binfmt handlers.
 
 # Digest must be updated when GO_VERSION or ALPINE_VERSION change.
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION}@sha256:c259ff7ffa06f1fd161a6abfa026573cf00f64cfd959c6d2a9d43e3ff63e8729 AS builder
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION}@sha256:be93003ee861b3b91b6ebcb22678524947e0cd786c2df3f32af520006b1e54f5 AS builder
 
 ARG VERSION=0.1.0-dev
 ARG COMMIT=unknown

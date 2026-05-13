@@ -26,6 +26,7 @@ func TestNewContext_FromContext_RoundTrip(t *testing.T) {
 	got := FromContext(ctx)
 	if got == nil {
 		t.Fatal("FromContext returned nil after NewContext")
+		return
 	}
 	if got.WorkspaceID != ws.WorkspaceID {
 		t.Errorf("WorkspaceID: got %q, want %q", got.WorkspaceID, ws.WorkspaceID)

@@ -37,6 +37,7 @@ func TestNewDispatcher_NilLogger(t *testing.T) {
 	d := NewDispatcher(nil, NewRegistry(), nil)
 	if d == nil {
 		t.Fatal("NewDispatcher returned nil")
+		return
 	}
 	if d.logger == nil {
 		t.Error("expected logger to default to slog.Default(), got nil")

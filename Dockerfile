@@ -14,9 +14,9 @@
 # Migrations are embedded in the binary via cmd/server's call to db.RunMigrations,
 # which uses the migrations/ files baked into the image at /app/migrations.
 
-# GO_VERSION must be >= the `go` directive in go.mod (currently 1.26.2).
+# GO_VERSION must be >= the `go` directive in go.mod (currently 1.26.3).
 # Pinned to match CI (.github/workflows/ci.yml). Bump in lockstep.
-ARG GO_VERSION=1.26.2
+ARG GO_VERSION=1.26.3
 ARG ALPINE_VERSION=3.22
 
 # ---- builder -----------------------------------------------------------------

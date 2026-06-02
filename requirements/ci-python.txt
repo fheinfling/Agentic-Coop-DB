@@ -150,9 +150,9 @@ click==8.3.2 \
     --hash=sha256:1924d2c27c5653561cd2cae4548d1406039cb79b858b747cfea24924bbc1616d \
     --hash=sha256:716988ead5d3faa0575c2195681554df5ff22dfb90e36d5ad02f0ac2bfc4c59c
     # via typer
-idna==3.11 \
-    --hash=sha256:771a87f49d9defaf64091e6e6fe9c18d4833f140bd19464795bc32d966ca37ea \
-    --hash=sha256:795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902
+idna==3.15 \
+    --hash=sha256:048adeaf8c2d788c40fee287673ccaa74c24ffd8dcf09ffa555a2fbb59f10ac8 \
+    --hash=sha256:ca962446ea538f7092a95e057da437618e886f4d349216d2b1e294abfdb65fdc
     # via requests
 iniconfig==2.3.0 \
     --hash=sha256:37680c0f1772719bc5b2d31e6a2eedafb053ee6c6546169f12dd24361988c104 \

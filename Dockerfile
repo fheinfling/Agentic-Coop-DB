@@ -14,9 +14,9 @@
 # Migrations are embedded in the binary via cmd/server's call to db.RunMigrations,
 # which uses the migrations/ files baked into the image at /app/migrations.
 
-# GO_VERSION must be >= the `go` directive in go.mod (currently 1.26.3).
+# GO_VERSION must be >= the `go` directive in go.mod (currently 1.26.4).
 # Pinned to match CI (.github/workflows/ci.yml). Bump in lockstep.
-ARG GO_VERSION=1.26.3
+ARG GO_VERSION=1.26.4
 ARG ALPINE_VERSION=3.22
 
 # ---- builder -----------------------------------------------------------------
@@ -34,7 +34,7 @@ ARG ALPINE_VERSION=3.22
 # `docker/setup-qemu-action` which provides the binfmt handlers.
 
 # Digest must be updated when GO_VERSION or ALPINE_VERSION change.
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION}@sha256:be93003ee861b3b91b6ebcb22678524947e0cd786c2df3f32af520006b1e54f5 AS builder
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION}@sha256:727cfc3c40be55cd1bc9a4a059406b28a059857e3be752aa9d09531e12c20c56 AS builder
 
 ARG VERSION=0.1.0-dev
 ARG COMMIT=unknown

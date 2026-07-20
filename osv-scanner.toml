@@ -57,11 +57,19 @@ ignoreUntil = "2026-10-12"
 #   6. No fix is released yet — v5.9.1 is the latest pgx/v5 release.
 # ---------------------------------------------------------------------------
 
+# TODO: ignoreUntil expired 2026-07-12 — re-evaluate, fix may now be available.
+#       Rationale above is stale: go.mod now pins jackc/pgx/v5 v5.10.0, but this
+#       block still assumes v5.9.1 is the latest release with no fix. A human must
+#       confirm whether v5.10.0 resolves GO-2026-4771/GO-2026-4772 (drop the
+#       suppression) or the advisory still applies (refresh with updated wording).
 [[IgnoredVulns]]
 id = "GO-2026-4771"
 reason = "pgproto3 is internal to pgx (never imported directly); no vulnerable symbols reachable (govulncheck clean); exploitation requires malicious DB server; no fix released yet"
 ignoreUntil = "2026-07-12"
 
+# TODO: ignoreUntil expired 2026-07-12 — re-evaluate, fix may now be available.
+#       Same as GO-2026-4771: go.mod now pins jackc/pgx/v5 v5.10.0, so the
+#       "v5.9.1 is latest / no fix released" rationale no longer holds. Human call.
 [[IgnoredVulns]]
 id = "GO-2026-4772"
 reason = "pgproto3 is internal to pgx (never imported directly); no vulnerable symbols reachable (govulncheck clean); exploitation requires malicious DB server; no fix released yet"

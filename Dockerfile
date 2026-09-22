@@ -16,8 +16,8 @@
 
 # GO_VERSION must be >= the `go` directive in go.mod (currently 1.26.4).
 # Pinned to match CI (.github/workflows/ci.yml). Bump in lockstep.
-ARG GO_VERSION=1.26.4
-ARG ALPINE_VERSION=3.22
+ARG GO_VERSION=1.26.8
+ARG ALPINE_VERSION=3.23
 
 # ---- builder -----------------------------------------------------------------
 #
@@ -34,7 +34,7 @@ ARG ALPINE_VERSION=3.22
 # `docker/setup-qemu-action` which provides the binfmt handlers.
 
 # Digest must be updated when GO_VERSION or ALPINE_VERSION change.
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION}@sha256:727cfc3c40be55cd1bc9a4a059406b28a059857e3be752aa9d09531e12c20c56 AS builder
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION}@sha256:a8fa79c5bd40d880b52bd3b6d7669ecdcfd00e85facdd427d279efb5ddd79cb1 AS builder
 
 ARG VERSION=0.1.0-dev
 ARG COMMIT=unknown
@@ -80,7 +80,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 # save a lot of operational pain on platforms like Coolify that rely on
 # exec for one-off commands.
 # Digest must be updated when ALPINE_VERSION changes.
-FROM alpine:${ALPINE_VERSION}@sha256:55ae5d250caebc548793f321534bc6a8ef1d116f334f18f4ada1b2daad3251b2
+FROM alpine:${ALPINE_VERSION}@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0
 
 RUN addgroup -g 65532 -S nonroot && adduser -u 65532 -S nonroot -G nonroot
 

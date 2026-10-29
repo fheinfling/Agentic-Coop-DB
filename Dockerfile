@@ -16,7 +16,7 @@
 
 # GO_VERSION must be >= the `go` directive in go.mod (currently 1.26.4).
 # Pinned to match CI (.github/workflows/ci.yml). Bump in lockstep.
-ARG GO_VERSION=1.26.8
+ARG GO_VERSION=1.26.10
 ARG ALPINE_VERSION=3.23
 
 # ---- builder -----------------------------------------------------------------
@@ -34,7 +34,7 @@ ARG ALPINE_VERSION=3.23
 # `docker/setup-qemu-action` which provides the binfmt handlers.
 
 # Digest must be updated when GO_VERSION or ALPINE_VERSION change.
-FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION}@sha256:a8fa79c5bd40d880b52bd3b6d7669ecdcfd00e85facdd427d279efb5ddd79cb1 AS builder
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION}@sha256:34414731924cf2263160f0021f5cf6e1807382d85248f7cb419d4187b96d5e43 AS builder
 
 ARG VERSION=0.1.0-dev
 ARG COMMIT=unknown

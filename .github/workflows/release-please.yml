@@ -13,8 +13,33 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: google-github-actions/release-please-action@e4dc86ba9405554aeba3c6bb2d169500e7d3b4ee # v4
+        id: release
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  # Releases and tags created with GITHUB_TOKEN do not trigger other
+  # workflows (`release: published`, `push: tags`), so release-binaries,
+  # publish-pypi and the tagged image build never ran on their own.
+  # workflow_dispatch is exempt from that rule, so start them explicitly.
+  dispatch-release-workflows:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ needs.release-please.outputs.tag_name }}
+    steps:
+      - name: dispatch release workflows
+        run: |
+          gh workflow run release-binaries.yml -f tag="${TAG}"
+          gh workflow run publish-pypi.yml -f tag="${TAG}"
+          gh workflow run build-images.yml --ref "${TAG}"
